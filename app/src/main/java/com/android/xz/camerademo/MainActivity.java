@@ -1,0 +1,70 @@
+package com.android.xz.camerademo;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
+
+import com.android.xz.permission.IPermissionsResult;
+import com.android.xz.permission.PermissionUtils;
+import com.android.xz.util.ImageUtils;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private Context mContext;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mContext = this;
+        ImageUtils.init(getApplicationContext());
+
+        findViewById(R.id.surfaceCameraBtn).setOnClickListener(this);
+        findViewById(R.id.textureCameraBtn).setOnClickListener(this);
+        findViewById(R.id.glSurfaceCameraBtn).setOnClickListener(this);
+    }
+
+    @Override
+    public void onClick(View v) {
+        PermissionUtils.getInstance().requestPermission(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, new IPermissionsResult() {
+            @Override
+            public void passPermissions() {
+                switch (v.getId()) {
+                    case R.id.surfaceCameraBtn:
+                        startActivity(new Intent(mContext, SurfaceCameraActivity.class));
+                        break;
+                    case R.id.textureCameraBtn:
+                        startActivity(new Intent(mContext, TextureCameraActivity.class));
+                        break;
+                    case R.id.glSurfaceCameraBtn:
+                        startActivity(new Intent(mContext, GLSurfaceCameraActivity.class));
+                        break;
+                }
+            }
+
+            @Override
+            public void forbidPermissions() {
+                Toast.makeText(mContext, "用户拒绝Camera授权", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        PermissionUtils.getInstance().onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        PermissionUtils.getInstance().onRequestPermissionsResult(this, requestCode, permissions, grantResults);
+    }
+}
