@@ -29,6 +29,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.surfaceCameraBtn).setOnClickListener(this);
         findViewById(R.id.textureCameraBtn).setOnClickListener(this);
         findViewById(R.id.glSurfaceCameraBtn).setOnClickListener(this);
+        findViewById(R.id.surfaceCamera2Btn).setOnClickListener(this);
+        findViewById(R.id.textureCamera2Btn).setOnClickListener(this);
+        findViewById(R.id.glSurfaceCamera2Btn).setOnClickListener(this);
     }
 
     @Override
@@ -45,6 +48,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case R.id.glSurfaceCameraBtn:
                         startActivity(new Intent(mContext, GLSurfaceCameraActivity.class));
+                        break;
+                    case R.id.surfaceCamera2Btn:
+                        startActivity(new Intent(mContext, SurfaceCamera2Activity.class));
+                        break;
+                    case R.id.textureCamera2Btn:
+                        startActivity(new Intent(mContext, TextureCamera2Activity.class));
+                        break;
+                    case R.id.glSurfaceCamera2Btn:
+                        startActivity(new Intent(mContext, GLSurfaceCamera2Activity.class));
                         break;
                 }
             }

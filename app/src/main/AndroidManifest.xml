@@ -25,6 +25,16 @@
         <activity
             android:name=".SurfaceCameraActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".SurfaceCamera2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".TextureCamera2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".GLSurfaceCamera2Activity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

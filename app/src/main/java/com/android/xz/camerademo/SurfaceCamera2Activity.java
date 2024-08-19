@@ -1,0 +1,82 @@
+package com.android.xz.camerademo;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.hardware.Camera;
+import android.media.Image;
+import android.media.ImageReader;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.ImageView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.xz.camera.Camera2Manager;
+import com.android.xz.camera.CameraManager;
+import com.android.xz.util.ImageUtils;
+import com.android.xz.view.Camera2SurfaceView;
+import com.android.xz.view.CameraSurfaceView;
+
+import java.nio.ByteBuffer;
+
+public class SurfaceCamera2Activity extends AppCompatActivity {
+
+    private static final String TAG = SurfaceCamera2Activity.class.getSimpleName();
+    private Camera2SurfaceView mCameraSurfaceView;
+    private Camera2Manager mCameraManager;
+    private ImageView mPictureIv;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_surface_camera2);
+
+        mCameraSurfaceView = findViewById(R.id.surfaceView);
+        mCameraManager = mCameraSurfaceView.getCameraManager();
+        findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
+        mPictureIv = findViewById(R.id.pictureIv);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mCameraSurfaceView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mCameraSurfaceView.onPause();
+    }
+
+    private void capture() {
+        mCameraManager.captureStillPicture(reader -> new ImageSaveTask().execute(reader.acquireNextImage()));
+    }
+
+    private class ImageSaveTask extends AsyncTask<Image, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(Image ... images) {
+            ByteBuffer buffer = images[0].getPlanes()[0].getBuffer();
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            if (mCameraManager.isFrontCamera()) {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                // 前置摄像头需要左右镜像
+                Bitmap rotateBitmap = ImageUtils.rotateBitmap(bitmap, 0, true, true);
+                ImageUtils.saveBitmap(rotateBitmap);
+                rotateBitmap.recycle();
+            } else {
+                ImageUtils.saveImage(bytes);
+            }
+            images[0].close();
+            return ImageUtils.getLatestThumbBitmap();
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            mPictureIv.setImageBitmap(bitmap);
+        }
+    }
+}

@@ -6,9 +6,9 @@
     android:background="@color/black"
     tools:context=".TextureCameraActivity">
 
-    <com.android.xz.view.CameraTextureView
-        android:id="@+id/textureView"
+    <com.android.xz.view.Camera2GLSurfaceView
+        android:id="@+id/glSurfaceView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"/>
 
 </LinearLayout>

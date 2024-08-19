@@ -29,4 +29,25 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
+    <Button
+        android:id="@+id/surfaceCamera2Btn"
+        android:textAllCaps="false"
+        android:text="Camera2 SurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/textureCamera2Btn"
+        android:textAllCaps="false"
+        android:text="Camera2 TextureView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/glSurfaceCamera2Btn"
+        android:textAllCaps="false"
+        android:text="Camera2 GLSurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
 </LinearLayout>

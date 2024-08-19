@@ -6,8 +6,8 @@ import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.TextureView;
 
+import com.android.xz.camera.Camera2Manager;
 import com.android.xz.camera.CameraManager;
-import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.util.Logs;
 
@@ -16,16 +16,16 @@ import com.android.xz.util.Logs;
  * 摄像头预览View
  * Created by xiaozhi on 2018/4/21.
  */
-public class CameraTextureView extends TextureView implements TextureView.SurfaceTextureListener, CameraCallback {
+public class Camera2TextureView extends TextureView implements TextureView.SurfaceTextureListener, CameraCallback {
 
-    private static final String TAG = CameraTextureView.class.getSimpleName();
+    private static final String TAG = Camera2TextureView.class.getSimpleName();
 
     private Context mContext;
     private SurfaceTexture mSurfaceTexture;
     private Handler mHandler;
     private boolean isMirror;
     private boolean hasSurface; // 是否存在摄像头显示层
-    private ICameraManager mCameraManager;
+    private Camera2Manager mCameraManager;
 
     private int mRatioWidth = 0;
     private int mRatioHeight = 0;
@@ -33,17 +33,17 @@ public class CameraTextureView extends TextureView implements TextureView.Surfac
     private int mTextureWidth;
     private int mTextureHeight;
 
-    public CameraTextureView(Context context) {
+    public Camera2TextureView(Context context) {
         super(context);
         init(context);
     }
 
-    public CameraTextureView(Context context, AttributeSet attrs) {
+    public Camera2TextureView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    public CameraTextureView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public Camera2TextureView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }
@@ -51,7 +51,7 @@ public class CameraTextureView extends TextureView implements TextureView.Surfac
     private void init(Context context) {
         mContext = context;
         mHandler = new Handler(mContext.getMainLooper());
-        mCameraManager = new CameraManager(context);
+        mCameraManager = new Camera2Manager(context);
         mCameraManager.setCameraCallback(this);
         setSurfaceTextureListener(this);
     }
@@ -61,7 +61,7 @@ public class CameraTextureView extends TextureView implements TextureView.Surfac
      *
      * @return
      */
-    public ICameraManager getCameraManager() {
+    public Camera2Manager getCameraManager() {
         return mCameraManager;
     }
 

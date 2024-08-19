@@ -9,6 +9,7 @@ import android.util.AttributeSet;
 
 import androidx.annotation.NonNull;
 
+import com.android.xz.camera.Camera2Manager;
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
@@ -21,9 +22,9 @@ import java.lang.ref.WeakReference;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class CameraGLSurfaceView extends GLSurfaceView implements SurfaceTexture.OnFrameAvailableListener, CameraCallback {
+public class Camera2GLSurfaceView extends GLSurfaceView implements SurfaceTexture.OnFrameAvailableListener, CameraCallback {
 
-    private static final String TAG = CameraGLSurfaceView.class.getSimpleName();
+    private static final String TAG = Camera2GLSurfaceView.class.getSimpleName();
 
     private Context mContext;
     private SurfaceTexture mSurfaceTexture;
@@ -38,12 +39,12 @@ public class CameraGLSurfaceView extends GLSurfaceView implements SurfaceTexture
     private int mPreviewHeight;
     private CameraSurfaceRenderer mRenderer;
 
-    public CameraGLSurfaceView(Context context) {
+    public Camera2GLSurfaceView(Context context) {
         super(context);
         init(context);
     }
 
-    public CameraGLSurfaceView(Context context, AttributeSet attrs) {
+    public Camera2GLSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
@@ -52,7 +53,7 @@ public class CameraGLSurfaceView extends GLSurfaceView implements SurfaceTexture
         mContext = context;
         mCameraHandler = new CameraHandler(this);
 
-        mCameraManager = new CameraManager(context);
+        mCameraManager = new Camera2Manager(context);
         mCameraManager.setCameraCallback(this);
 
         setEGLContextClientVersion(2);
@@ -212,9 +213,9 @@ public class CameraGLSurfaceView extends GLSurfaceView implements SurfaceTexture
 
         public static final int MSG_SURFACE_CHANGED = 1;
 
-        private WeakReference<CameraGLSurfaceView> mWeakGLSurfaceView;
+        private WeakReference<Camera2GLSurfaceView> mWeakGLSurfaceView;
 
-        public CameraHandler(CameraGLSurfaceView view) {
+        public CameraHandler(Camera2GLSurfaceView view) {
             mWeakGLSurfaceView = new WeakReference<>(view);
         }
 
@@ -231,7 +232,7 @@ public class CameraGLSurfaceView extends GLSurfaceView implements SurfaceTexture
             super.handleMessage(msg);
             int what = msg.what;
 
-            CameraGLSurfaceView view = mWeakGLSurfaceView.get();
+            Camera2GLSurfaceView view = mWeakGLSurfaceView.get();
             if (view == null) {
                 return;
             }
@@ -255,9 +256,9 @@ public class CameraGLSurfaceView extends GLSurfaceView implements SurfaceTexture
      * Do not call any methods here directly from another thread -- use the
      * GLSurfaceView#queueEvent() call.
      */
-    static class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
+    static class CameraSurfaceRenderer implements Renderer {
 
-        private CameraGLSurfaceView.CameraHandler mCameraHandler;
+        private Camera2GLSurfaceView.CameraHandler mCameraHandler;
 
         private final float[] mSTMatrix = new float[16];
         private FullFrameRect mFullScreen;
@@ -268,7 +269,7 @@ public class CameraGLSurfaceView extends GLSurfaceView implements SurfaceTexture
         private int mTextureId = -1;
         private SurfaceTexture mSurfaceTexture;
 
-        public CameraSurfaceRenderer(CameraGLSurfaceView.CameraHandler cameraHandler) {
+        public CameraSurfaceRenderer(Camera2GLSurfaceView.CameraHandler cameraHandler) {
             mCameraHandler = cameraHandler;
 
             mTextureId = -1;

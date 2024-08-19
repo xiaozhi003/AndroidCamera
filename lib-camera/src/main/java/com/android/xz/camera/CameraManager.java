@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Created by wangzhi on 2024/8/15.
  */
-public class CameraManager implements Camera.AutoFocusCallback {
+public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
 
     public static final int CAMERA_ERROR_NO_ID = -1001;
     public static final int CAMERA_ERROR_OPEN = -1002;
@@ -229,6 +229,7 @@ public class CameraManager implements Camera.AutoFocusCallback {
                 Camera.getCameraInfo(mCameraId, mCameraInfo);
                 mCamera.setErrorCallback(errorCallback);
                 initCamera();
+                onOpen();
                 mOrientationEventListener.enable();
             } catch (Exception e) {
                 onOpenError(CAMERA_ERROR_OPEN, e.getMessage());

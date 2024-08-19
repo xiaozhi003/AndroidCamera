@@ -7,10 +7,10 @@
     android:orientation="vertical"
     tools:context=".SurfaceCameraActivity">
 
-    <com.android.xz.view.CameraSurfaceView
+    <com.android.xz.view.Camera2SurfaceView
         android:id="@+id/surfaceView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent" />
 
     <RelativeLayout
         android:layout_width="match_parent"
