@@ -11,6 +11,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
+import com.android.xz.camerademo.camera2_activity.GLSurfaceCamera2Activity;
+import com.android.xz.camerademo.camera2_activity.SurfaceCamera2Activity;
+import com.android.xz.camerademo.camera2_activity.TextureCamera2Activity;
+import com.android.xz.camerademo.camera_activity.GLSurfaceCameraActivity;
+import com.android.xz.camerademo.camera_activity.SurfaceCameraActivity;
+import com.android.xz.camerademo.camera_activity.TextureCameraActivity;
 import com.android.xz.permission.IPermissionsResult;
 import com.android.xz.permission.PermissionUtils;
 import com.android.xz.util.ImageUtils;

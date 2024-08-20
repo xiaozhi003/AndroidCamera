@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -17,23 +17,23 @@
         android:theme="@style/Theme.AndroidCamera"
         tools:targetApi="31">
         <activity
-            android:name=".GLSurfaceCameraActivity"
+            android:name=".camera_activity.SurfaceCameraActivity"
             android:exported="false" />
         <activity
-            android:name=".TextureCameraActivity"
+            android:name=".camera_activity.TextureCameraActivity"
             android:exported="false" />
         <activity
-            android:name=".SurfaceCameraActivity"
+            android:name=".camera_activity.GLSurfaceCameraActivity"
             android:exported="false" />
 
         <activity
-            android:name=".SurfaceCamera2Activity"
+            android:name=".camera2_activity.SurfaceCamera2Activity"
             android:exported="false" />
         <activity
-            android:name=".TextureCamera2Activity"
+            android:name=".camera2_activity.TextureCamera2Activity"
             android:exported="false" />
         <activity
-            android:name=".GLSurfaceCamera2Activity"
+            android:name=".camera2_activity.GLSurfaceCamera2Activity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

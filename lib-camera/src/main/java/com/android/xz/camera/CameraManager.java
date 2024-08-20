@@ -12,12 +12,14 @@ import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.ShutterCallback;
 import android.util.Log;
+import android.util.Size;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.camera.callback.PreviewBufferCallback;
 import com.android.xz.util.Logs;
 
 import java.util.ArrayList;
@@ -62,6 +64,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     private int mDisplayOrientation = -1;
     private int mOrientation = -1;
     private int mCameraId = 0;
+    private Size mPreviewSize;
     private int mPreviewWidth = 1440;
     private int mPreviewHeight = 1080;
 
@@ -69,12 +72,16 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     private Context mContext;
     private byte[] mCameraBytes = null;
     private boolean isSupportZoom;
-    private boolean isMirror;
     private CameraCallback mCameraCallback;
+    private PreviewBufferCallback mPreviewBufferCallback;
     private PreviewCallback mPreviewCallback = new PreviewCallback() {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
+            if (mPreviewBufferCallback != null) {
+                mPreviewBufferCallback.onPreviewBufferFrame(data, mPreviewWidth, mPreviewHeight);
+            }
             mCameraBytes = data;
+            camera.addCallbackBuffer(data);
         }
     };
     private Camera.ErrorCallback errorCallback = (error, camera) -> {
@@ -118,13 +125,17 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
 
     /**
      * 设置预览尺寸
-     *
-     * @param previewWidth
-     * @param previewHeight
      */
-    public void setPreviewSize(int previewWidth, int previewHeight) {
-        mPreviewWidth = previewWidth;
-        mPreviewHeight = previewHeight;
+    @Override
+    public void setPreviewSize(Size size) {
+        mPreviewSize = size;
+        mPreviewWidth = size.getWidth();
+        mPreviewHeight = size.getHeight();
+    }
+
+    @Override
+    public Size getPreviewSize() {
+        return mPreviewSize;
     }
 
     /**
@@ -161,44 +172,17 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
      *
      * @param cameraId
      */
+    @Override
     public void setCameraId(int cameraId) {
         mCameraId = cameraId;
     }
 
-    /**
-     * 获取预览宽
-     *
-     * @return
-     */
-    public int getPreviewWidth() {
-        return mPreviewWidth;
+    @Override
+    public void setPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
+        mPreviewBufferCallback = previewBufferCallback;
     }
 
-    /**
-     * 获取预览高
-     *
-     * @return
-     */
-    public int getPreviewHeight() {
-        return mPreviewHeight;
-    }
-
-    public void setPreviewCallback(PreviewCallback previewCallback) {
-        mPreviewCallback = previewCallback;
-        if (null != mCamera) {
-            mCamera.addCallbackBuffer(new byte[mPreviewWidth * mPreviewHeight * 3 / 2]);
-            mCamera.setPreviewCallbackWithBuffer(mPreviewCallback);
-        }
-    }
-
-    public boolean isMirror() {
-        return isMirror;
-    }
-
-    public void setMirror(boolean mirror) {
-        isMirror = mirror;
-    }
-
+    @Override
     public void setCameraCallback(CameraCallback cameraCallback) {
         mCameraCallback = cameraCallback;
     }
@@ -217,6 +201,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     /**
      * 打开Camera
      */
+    @Override
     public synchronized void openCamera() {
         Logs.i(TAG, "Camera open #" + mCameraId);
         if (mCamera == null) {
@@ -242,6 +227,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
      *
      * @return
      */
+    @Override
     public synchronized boolean isOpen() {
         return mCamera != null;
     }
@@ -251,6 +237,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
      *
      * @param holder
      */
+    @Override
     public synchronized void startPreview(SurfaceHolder holder) {
         Logs.i(TAG, "startPreview...");
         if (isPreviewing) {
@@ -259,7 +246,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         if (mCamera != null) {
             try {
                 mCamera.setPreviewDisplay(holder);
-                if (mPreviewCallback != null) {
+                if (mPreviewBufferCallback != null) {
                     mCamera.addCallbackBuffer(new byte[mPreviewWidth * mPreviewHeight * 3 / 2]);
                     mCamera.setPreviewCallbackWithBuffer(mPreviewCallback);
                 }
@@ -276,6 +263,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
      *
      * @param surface
      */
+    @Override
     public synchronized void startPreview(SurfaceTexture surface) {
         Logs.i(TAG, "startPreview...");
         if (isPreviewing) {
@@ -296,6 +284,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     /**
      * 关闭预览
      */
+    @Override
     public synchronized void stopPreview() {
         Logs.v(TAG, "stopPreview.");
         if (isPreviewing && null != mCamera) {
@@ -312,6 +301,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     /**
      * 停止预览，释放Camera
      */
+    @Override
     public synchronized void releaseCamera() {
         Logs.v(TAG, "releaseCamera.");
         if (null != mCamera) {
@@ -354,6 +344,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
             Camera.Size previewSize = getSuitableSize(mParameters.getSupportedPreviewSizes());
             mPreviewWidth = previewSize.width;
             mPreviewHeight = previewSize.height;
+            mPreviewSize = new Size(mPreviewWidth, mPreviewHeight);
             mParameters.setPreviewSize(mPreviewWidth, mPreviewHeight);
             Logs.d(TAG, "previewWidth: " + mPreviewWidth + ", previewHeight: " + mPreviewHeight);
 
@@ -520,19 +511,6 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
             }
         }
         return sizes.get(index);
-    }
-
-    /**
-     * 获取一帧图像数据（nv21格式）
-     *
-     * @return
-     */
-    public byte[] getCameraBytes() {
-        return mCameraBytes;
-    }
-
-    public void setCameraBytes(byte[] cameraBytes) {
-        mCameraBytes = cameraBytes;
     }
 
     public void setZoom(int zoomValue) {

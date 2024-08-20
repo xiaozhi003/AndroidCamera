@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
-    tools:context=".TextureCameraActivity">
+    tools:context=".camera_activity.TextureCameraActivity">
 
     <com.android.xz.view.Camera2GLSurfaceView
         android:id="@+id/glSurfaceView"

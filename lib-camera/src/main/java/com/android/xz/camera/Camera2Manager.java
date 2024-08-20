@@ -19,6 +19,7 @@ import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -33,14 +34,17 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.camera.callback.PreviewBufferCallback;
 import com.android.xz.util.Logs;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public class Camera2Manager implements ICameraManager {
@@ -74,10 +78,10 @@ public class Camera2Manager implements ICameraManager {
      * 相机预览请求构造器
      */
     private CaptureRequest.Builder mPreviewRequestBuilder;
-    private CaptureRequest mPreviewRequest;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     private ImageReader mPictureImageReader;
+    private ImageReader mPreviewImageReader;
     private Surface mPreviewSurface;
     private OrientationEventListener mOrientationEventListener;
     private int mSensorOrientation;
@@ -89,6 +93,7 @@ public class Camera2Manager implements ICameraManager {
     private int mPreviewWidth = 1440;
     private int mPreviewHeight = 1080;
     private float mPreviewScale = mPreviewHeight * 1f / mPreviewWidth;
+    private PreviewBufferCallback mPreviewBufferCallback;
     /**
      * 拍照大小
      */
@@ -139,8 +144,19 @@ public class Camera2Manager implements ICameraManager {
         }
     };
 
+    @Override
     public void setCameraCallback(CameraCallback cameraCallback) {
         mCameraCallback = cameraCallback;
+    }
+
+    @Override
+    public void setPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
+        mPreviewBufferCallback = previewBufferCallback;
+    }
+
+    @Override
+    public void setCameraId(int cameraId) {
+        mCameraId = cameraId;
     }
 
     public Camera2Manager(Context context) {
@@ -153,25 +169,6 @@ public class Camera2Manager implements ICameraManager {
             }
         };
     }
-
-//    public void setUpCameraOutputs(int width, int height) {
-//        try {
-//            mCameraCharacteristics = mCameraManager.getCameraCharacteristics(Integer.toString(mCameraId));
-//            StreamConfigurationMap map = mCameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-//            Size[] supportPictureSizes = map.getOutputSizes(ImageFormat.JPEG);
-//            Size pictureSize = Collections.max(Arrays.asList(supportPictureSizes), new CompareSizesByArea());
-//            float aspectRatio = pictureSize.getHeight() * 1.0f / pictureSize.getWidth();
-//            Size[] supportPreviewSizes = map.getOutputSizes(SurfaceTexture.class);
-//            // 一般相机页面都是固定竖屏，宽是短边，所以根据view的宽度来计算需要的预览大小
-//            Size previewSize = chooseOptimalSize(supportPreviewSizes, width, aspectRatio);
-//            Log.d(TAG, "pictureSize: " + pictureSize);
-//            Log.d(TAG, "previewSize: " + previewSize);
-//            mPictureSize = pictureSize;
-//            mPreviewSize = previewSize;
-//        } catch (CameraAccessException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
     private void setUpCameraOutputs(CameraManager cameraManager) {
         try {
@@ -238,6 +235,7 @@ public class Camera2Manager implements ICameraManager {
         return sizes.get(index);
     }
 
+    @Override
     public void openCamera() {
         Log.v(TAG, "openCamera");
         if (mCameraDevice != null) {
@@ -306,6 +304,7 @@ public class Camera2Manager implements ICameraManager {
         mStepHeight = (rect.height() - minHeight) / MAX_ZOOM / 2;
     }
 
+    @Override
     public void releaseCamera() {
         Log.v(TAG, "releaseCamera");
         stopPreview();
@@ -320,6 +319,10 @@ public class Camera2Manager implements ICameraManager {
         if (mPictureImageReader != null) {
             mPictureImageReader.close();
             mPictureImageReader = null;
+        }
+        if (mPreviewImageReader != null) {
+            mPreviewImageReader.close();
+            mPreviewImageReader = null;
         }
         mOrientationEventListener.disable();
         stopBackgroundThread(); // 对应 openCamera() 方法中的 startBackgroundThread()
@@ -340,6 +343,15 @@ public class Camera2Manager implements ICameraManager {
             mPictureImageReader = ImageReader.newInstance(pictureSize.getWidth(), pictureSize.getHeight(), ImageFormat.JPEG, 1);
             outputs.add(mPictureImageReader.getSurface());
         }
+
+        // preview output
+        if (mPreviewBufferCallback != null) {
+            mPreviewImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(), ImageFormat.YUV_420_888, 2);
+            mPreviewImageReader.setOnImageAvailableListener(new OnImageAvailableListenerImpl(), mBackgroundHandler);
+            outputs.add(mPreviewImageReader.getSurface());
+            mPreviewRequestBuilder.addTarget(mPreviewImageReader.getSurface());
+        }
+
         try {
             // 一个session中，所有CaptureRequest能够添加的target，必须是outputs的子集，所以在创建session的时候需要都添加进来
             mCameraDevice.createCaptureSession(outputs, new CameraCaptureSession.StateCallback() {
@@ -380,12 +392,14 @@ public class Camera2Manager implements ICameraManager {
         }
     }
 
+    @Override
     public void startPreview(SurfaceHolder surfaceHolder) {
         mPreviewSurface = surfaceHolder.getSurface();
         initPreviewRequest();
         createCommonSession();
     }
 
+    @Override
     public void startPreview(SurfaceTexture surfaceTexture) {
         surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         mPreviewSurface = new Surface(surfaceTexture);
@@ -414,6 +428,7 @@ public class Camera2Manager implements ICameraManager {
         }
     }
 
+    @Override
     public void stopPreview() {
         Log.v(TAG, "stopPreview");
         if (mCaptureSession == null) {
@@ -426,6 +441,16 @@ public class Camera2Manager implements ICameraManager {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public Size getPreviewSize() {
+        return mPreviewSize;
+    }
+
+    @Override
+    public void setPreviewSize(Size previewSize) {
+        mPreviewSize = previewSize;
     }
 
     public void captureStillPicture(ImageReader.OnImageAvailableListener onImageAvailableListener) {
@@ -487,14 +512,6 @@ public class Camera2Manager implements ICameraManager {
 
     public boolean isFrontCamera() {
         return mCameraId == CameraCharacteristics.LENS_FACING_BACK;
-    }
-
-    public Size getPreviewSize() {
-        return mPreviewSize;
-    }
-
-    public void setPreviewSize(Size previewSize) {
-        mPreviewSize = previewSize;
     }
 
     public Size getPictureSize() {
@@ -707,6 +724,145 @@ public class Camera2Manager implements ICameraManager {
     private void onClose() {
         if (mCameraCallback != null) {
             mCameraCallback.onClose();
+        }
+    }
+
+    private class OnImageAvailableListenerImpl implements ImageReader.OnImageAvailableListener {
+        private byte[] y;
+        private byte[] u;
+        private byte[] v;
+        private byte[] yuvData;
+        private ReentrantLock lock = new ReentrantLock();
+
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Image image = reader.acquireNextImage();
+            // Y:U:V == 4:2:2
+            if (image.getFormat() == ImageFormat.YUV_420_888) {
+                Image.Plane[] planes = image.getPlanes();
+                int width = image.getWidth();
+                int height = image.getHeight();
+
+                // 加锁确保y、u、v来源于同一个Image
+                lock.lock();
+
+                /** Y */
+                ByteBuffer bufferY = planes[0].getBuffer();
+                /** U(Cb) */
+                ByteBuffer bufferU = planes[1].getBuffer();
+                /** V(Cr) */
+                ByteBuffer bufferV = planes[2].getBuffer();
+
+                // 重复使用同一批byte数组，减少gc频率
+                if (y == null) {
+                    y = new byte[bufferY.limit() - bufferY.position()];
+                    u = new byte[bufferU.limit() - bufferU.position()];
+                    v = new byte[bufferV.limit() - bufferV.position()];
+                }
+
+                if (yuvData == null) {
+                    yuvData = new byte[width * height * 3 / 2];
+                }
+
+                if (bufferY.remaining() == y.length) {
+                    bufferY.get(y);
+                    bufferU.get(u);
+                    bufferV.get(v);
+
+                    // 数据前期处理
+                    // 处理y
+                    int yRowStride = planes[0].getRowStride();
+                    if (yRowStride == width) {
+                        System.arraycopy(y, 0, yuvData, 0, y.length);
+                    } else {
+                        // 按行提取
+                        for (int i = 0; i < height; i++) {
+                            System.arraycopy(y, i * yRowStride, yuvData, i * width, width);
+                        }
+                    }
+
+                    int ySize = width * height;
+
+                    // 判断是p还是sp
+                    if (planes[1].getPixelStride() == 1) { // P
+                        int offset = ySize;
+                        // 处理U
+                        int uRowStride = planes[1].getRowStride();
+                        if (uRowStride == width / 2) {
+                            System.arraycopy(u, 0, yuvData, offset, u.length);
+                        } else {
+                            int rowStride = width / 2;
+                            for (int i = 0; i < height / 2; i++) {
+                                System.arraycopy(u, i * uRowStride, yuvData, offset + i * rowStride, rowStride);
+                            }
+                        }
+
+                        offset = ySize + width * height / 4;
+                        // 处理V
+                        int vRowStride = planes[2].getRowStride();
+                        if (vRowStride == width / 2) {
+                            System.arraycopy(v, 0, yuvData, offset, v.length);
+                        } else {
+                            int rowStride = width / 2;
+                            for (int i = 0; i < height / 2; i++) {
+                                System.arraycopy(v, i * vRowStride, yuvData, offset + i * rowStride, rowStride);
+                            }
+                        }
+                    } else if (planes[1].getPixelStride() == 2) { // SP
+                        int offset = width * height;
+
+                        // 处理U分量
+                        int uRowStride = planes[1].getRowStride();
+                        if (uRowStride == width) {
+                            for (int i = 0; i < u.length; i++) {
+                                if (0 == (i % 2)) {
+                                    yuvData[offset] = u[i];
+                                    offset++;
+                                }
+                            }
+                        } else {
+                            // 按行提取
+                            for (int i = 0; i < height / 2; i++) {
+                                for (int j = i * uRowStride; j < uRowStride * i + width; j++) {
+                                    if (0 == (j % 2)) {
+                                        yuvData[offset] = u[i];
+                                        offset++;
+                                    }
+                                }
+                            }
+                        }
+
+                        offset = width * height * 5 / 4;
+                        // 提取V分量
+                        int vRowStride = planes[2].getRowStride();
+                        if (vRowStride == width) {
+                            for (int i = 0; i < v.length; i++) {
+                                if (0 == (i % 2)) {
+                                    yuvData[offset] = v[i];
+                                    offset++;
+                                }
+                            }
+                        } else {
+                            // 按行提取
+                            for (int i = 0; i < height / 2; i++) {
+                                for (int j = i * vRowStride; j < vRowStride * i + width; j++) {
+                                    if (0 == (j % 2)) {
+                                        yuvData[offset] = u[i];
+                                        offset++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (mPreviewBufferCallback != null) {
+                    mPreviewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight());
+                }
+                lock.unlock();
+            }
+
+            image.close();
         }
     }
 }

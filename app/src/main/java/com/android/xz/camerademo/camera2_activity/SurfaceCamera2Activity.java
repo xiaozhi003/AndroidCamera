@@ -1,22 +1,21 @@
-package com.android.xz.camerademo;
+package com.android.xz.camerademo.camera2_activity;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.Camera;
 import android.media.Image;
-import android.media.ImageReader;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
+import android.util.Size;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.xz.camera.Camera2Manager;
-import com.android.xz.camera.CameraManager;
+import com.android.xz.camera.callback.PreviewBufferCallback;
+import com.android.xz.camerademo.R;
 import com.android.xz.util.ImageUtils;
+import com.android.xz.util.Logs;
 import com.android.xz.view.Camera2SurfaceView;
-import com.android.xz.view.CameraSurfaceView;
 
 import java.nio.ByteBuffer;
 
@@ -33,7 +32,8 @@ public class SurfaceCamera2Activity extends AppCompatActivity {
         setContentView(R.layout.activity_surface_camera2);
 
         mCameraSurfaceView = findViewById(R.id.surfaceView);
-        mCameraManager = mCameraSurfaceView.getCameraManager();
+        mCameraManager = (Camera2Manager) mCameraSurfaceView.getCameraManager();
+        mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
         mPictureIv = findViewById(R.id.pictureIv);
     }
@@ -79,4 +79,11 @@ public class SurfaceCamera2Activity extends AppCompatActivity {
             mPictureIv.setImageBitmap(bitmap);
         }
     }
+
+    private PreviewBufferCallback mPreviewBufferCallback = new PreviewBufferCallback() {
+        @Override
+        public void onPreviewBufferFrame(byte[] data, int width, int height) {
+//            Logs.i(TAG, "onPreviewBufferFrame...");
+        }
+    };
 }

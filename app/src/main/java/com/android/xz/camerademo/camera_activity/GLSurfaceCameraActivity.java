@@ -1,9 +1,10 @@
-package com.android.xz.camerademo;
+package com.android.xz.camerademo.camera_activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 
+import com.android.xz.camerademo.R;
 import com.android.xz.view.CameraGLSurfaceView;
 
 public class GLSurfaceCameraActivity extends AppCompatActivity {

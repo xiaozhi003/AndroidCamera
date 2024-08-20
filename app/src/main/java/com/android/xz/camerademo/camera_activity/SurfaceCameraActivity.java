@@ -1,4 +1,4 @@
-package com.android.xz.camerademo;
+package com.android.xz.camerademo.camera_activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -11,7 +11,10 @@ import android.util.Log;
 import android.widget.ImageView;
 
 import com.android.xz.camera.CameraManager;
+import com.android.xz.camera.callback.PreviewBufferCallback;
+import com.android.xz.camerademo.R;
 import com.android.xz.util.ImageUtils;
+import com.android.xz.util.Logs;
 import com.android.xz.view.CameraSurfaceView;
 
 public class SurfaceCameraActivity extends AppCompatActivity {
@@ -28,6 +31,7 @@ public class SurfaceCameraActivity extends AppCompatActivity {
 
         mCameraSurfaceView = findViewById(R.id.surfaceView);
         mCameraManager = (CameraManager) mCameraSurfaceView.getCameraManager();
+        mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
         mPictureIv = findViewById(R.id.pictureIv);
     }
@@ -79,4 +83,11 @@ public class SurfaceCameraActivity extends AppCompatActivity {
             mPictureIv.setImageBitmap(bitmap);
         }
     }
+
+    private PreviewBufferCallback mPreviewBufferCallback = new PreviewBufferCallback() {
+        @Override
+        public void onPreviewBufferFrame(byte[] data, int width, int height) {
+//            Logs.i(TAG, "onPreviewBufferFrame...");
+        }
+    };
 }

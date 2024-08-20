@@ -1,19 +1,21 @@
-package com.android.xz.camerademo;
-
-import androidx.appcompat.app.AppCompatActivity;
+package com.android.xz.camerademo.camera2_activity;
 
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.xz.camerademo.R;
+import com.android.xz.view.Camera2TextureView;
 import com.android.xz.view.CameraTextureView;
 
-public class TextureCameraActivity extends AppCompatActivity {
+public class TextureCamera2Activity extends AppCompatActivity {
 
-    private CameraTextureView mCameraTextureView;
+    private Camera2TextureView mCameraTextureView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_texture_camera);
+        setContentView(R.layout.activity_texture_camera2);
 
         mCameraTextureView = findViewById(R.id.textureView);
     }

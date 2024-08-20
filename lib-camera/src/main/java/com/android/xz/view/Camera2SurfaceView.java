@@ -9,6 +9,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.android.xz.camera.Camera2Manager;
+import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.util.Logs;
 
@@ -23,7 +24,7 @@ public class Camera2SurfaceView extends SurfaceView implements SurfaceHolder.Cal
     private Handler mHandler;
 
     private boolean hasSurface; // 是否存在摄像头显示层
-    private Camera2Manager mCameraManager;
+    private ICameraManager mCameraManager;
     private int mRatioWidth = 0;
     private int mRatioHeight = 0;
     private int mSurfaceWidth;
@@ -56,7 +57,7 @@ public class Camera2SurfaceView extends SurfaceView implements SurfaceHolder.Cal
         mCameraManager.setCameraCallback(this);
     }
 
-    public Camera2Manager getCameraManager() {
+    public ICameraManager getCameraManager() {
         return mCameraManager;
     }
 
