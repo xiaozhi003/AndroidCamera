@@ -131,6 +131,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         mPreviewSize = size;
         mPreviewWidth = size.getWidth();
         mPreviewHeight = size.getHeight();
+        mPreviewScale = mPreviewHeight * 1f / mPreviewWidth;
     }
 
     @Override

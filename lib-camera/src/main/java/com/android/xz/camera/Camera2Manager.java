@@ -451,6 +451,9 @@ public class Camera2Manager implements ICameraManager {
     @Override
     public void setPreviewSize(Size previewSize) {
         mPreviewSize = previewSize;
+        mPreviewWidth = mPreviewSize.getWidth();
+        mPreviewHeight = mPreviewSize.getHeight();
+        mPreviewScale = mPreviewHeight * 1f / mPreviewWidth;
     }
 
     public void captureStillPicture(ImageReader.OnImageAvailableListener onImageAvailableListener) {
@@ -759,6 +762,9 @@ public class Camera2Manager implements ICameraManager {
                     u = new byte[bufferU.limit() - bufferU.position()];
                     v = new byte[bufferV.limit() - bufferV.position()];
                 }
+//                Logs.i(TAG, "y.len:" + bufferY.remaining() + " planes[0].pixelStride:" + planes[0].getPixelStride() + " planes[0].rowStride:" + planes[0].getRowStride());
+//                Logs.i(TAG, "u.len:" + bufferU.remaining() + " planes[1].pixelStride:" + planes[1].getPixelStride() + " planes[1].rowStride:" + planes[1].getRowStride());
+//                Logs.i(TAG, "v.len:" + bufferV.remaining() + " planes[2].pixelStride:" + planes[2].getPixelStride() + " planes[2].rowStride:" + planes[2].getRowStride());
 
                 if (yuvData == null) {
                     yuvData = new byte[width * height * 3 / 2];
