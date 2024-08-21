@@ -375,6 +375,9 @@ public class Camera2Manager implements ICameraManager {
             Log.e(TAG, "initPreviewRequest failed, mPreviewSurface is null");
             return;
         }
+        if (!isOpen()) {
+            return;
+        }
         try {
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             // 设置预览输出的 Surface
