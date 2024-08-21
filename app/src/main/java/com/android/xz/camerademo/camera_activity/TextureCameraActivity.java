@@ -1,14 +1,12 @@
 package com.android.xz.camerademo.camera_activity;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ImageView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.callback.PreviewBufferCallback;
@@ -64,17 +62,7 @@ public class TextureCameraActivity extends AppCompatActivity {
 
         @Override
         protected Bitmap doInBackground(byte[]... bytes) {
-            long time = System.currentTimeMillis();
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes[0], 0, bytes[0].length);
-            Log.d(TAG, "BitmapFactory.decodeByteArray time: " + (System.currentTimeMillis() - time));
-            int rotation = mCameraManager.getLatestRotation();
-            time = System.currentTimeMillis();
-            Bitmap rotateBitmap = ImageUtils.rotateBitmap(bitmap, rotation, mCameraManager.isFrontCamera(), true);
-            Log.d(TAG, "rotateBitmap time: " + (System.currentTimeMillis() - time));
-            time = System.currentTimeMillis();
-            ImageUtils.saveBitmap(rotateBitmap);
-            Log.d(TAG, "saveBitmap time: " + (System.currentTimeMillis() - time));
-            rotateBitmap.recycle();
+            ImageUtils.saveImage(bytes[0]);
             return ImageUtils.getLatestThumbBitmap();
         }
 

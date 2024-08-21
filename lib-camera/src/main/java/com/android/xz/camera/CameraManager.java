@@ -2,8 +2,6 @@ package com.android.xz.camera;
 
 import android.content.Context;
 import android.graphics.ImageFormat;
-import android.graphics.Picture;
-import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -11,7 +9,6 @@ import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.ShutterCallback;
-import android.util.Log;
 import android.util.Size;
 import android.view.OrientationEventListener;
 import android.view.Surface;
@@ -193,9 +190,12 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     }
 
     public void takePicture(ShutterCallback shutterCallback, PictureCallback rawCallback, PictureCallback jpegCallback) {
-        if (null != mCamera) {
-            mCamera.takePicture(shutterCallback, rawCallback, jpegCallback);
+        if (null != mCamera && isPreviewing) {
             isPreviewing = false;
+            Logs.i(TAG, "latestRotation:" + getLatestRotation());
+            mParameters.setRotation(getLatestRotation());
+            mCamera.setParameters(mParameters);
+            mCamera.takePicture(shutterCallback, rawCallback, jpegCallback);
         }
     }
 
@@ -311,6 +311,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
                 mCamera.release();
                 mCamera = null;
                 mCameraBytes = null;
+                mDisplayOrientation = -1;
             } catch (Exception e) {
             }
             onClose();
@@ -327,7 +328,10 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
             if (mDisplayOrientation == -1) {
                 setCameraDisplayOrientation(mContext, mCameraId, mCamera);
             }
+            // 设置预览方向
             mCamera.setDisplayOrientation(mDisplayOrientation);
+            // 设置拍照方向
+            mParameters.setRotation(mOrientation);
 
             // 如果摄像头不支持这些参数都会出错的，所以设置的时候一定要判断是否支持
             List<String> supportedFlashModes = mParameters.getSupportedFlashModes();
@@ -349,7 +353,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
             mParameters.setPreviewSize(mPreviewWidth, mPreviewHeight);
             Logs.d(TAG, "previewWidth: " + mPreviewWidth + ", previewHeight: " + mPreviewHeight);
 
-            Camera.Size pictureSize = getSuitableSize(mParameters.getSupportedPictureSizes());
+            Camera.Size pictureSize = mParameters.getPictureSize();
             mParameters.setPictureSize(pictureSize.width, pictureSize.height);
             Logs.d(TAG, "pictureWidth: " + pictureSize.width + ", pictureHeight: " + pictureSize.height);
 
@@ -615,6 +619,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         mDisplayOrientation = result;
         mOrientation = info.orientation;
         Logs.d(TAG, "displayOrientation:" + mDisplayOrientation);
+        Logs.d(TAG, "orientation:" + mOrientation);
     }
 
     @Override

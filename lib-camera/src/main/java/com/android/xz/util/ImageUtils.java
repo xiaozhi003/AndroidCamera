@@ -5,14 +5,21 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
+import android.util.Size;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -126,5 +133,114 @@ public class ImageUtils {
         }
         cursor.close();
         return bitmap;
+    }
+
+    public static Bitmap getCorrectOrientationBitmap(byte[] bytes, Size requestSize) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+
+        // 计算缩放比例
+        options.inSampleSize = calculateInSampleSize(options, requestSize.getWidth(), requestSize.getHeight());
+
+        // 使用新的缩放比例在此解码图片
+        options.inJustDecodeBounds = false;
+        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+
+        Matrix matrix = getJPEGMatrix(bytes);
+        if (!matrix.isIdentity()) {
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        }
+
+        return bitmap;
+    }
+
+    public static Matrix getJPEGMatrix(byte[] bytes) {
+        Matrix matrix = new Matrix();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            try {
+                InputStream inputStream = new ByteArrayInputStream(bytes);
+                ExifInterface exifInterface = new ExifInterface(inputStream);
+                int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                Logs.i(TAG, "orientation: " + orientation);
+
+                switch (orientation) {
+                    case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                        matrix.setScale(-1, 1);
+                        break;
+                    case ExifInterface.ORIENTATION_ROTATE_180:
+                        matrix.setRotate(180);
+                        break;
+                    case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                        matrix.setScale(1, -1);
+                        break;
+                    case ExifInterface.ORIENTATION_TRANSPOSE:
+                        matrix.setRotate(90);
+                        matrix.postScale(-1, 1);
+                        break;
+                    case ExifInterface.ORIENTATION_ROTATE_90:
+                        matrix.setRotate(90);
+                        break;
+                    case ExifInterface.ORIENTATION_TRANSVERSE:
+                        matrix.setRotate(-90);
+                        matrix.postScale(-1, 1);
+                        break;
+                    case ExifInterface.ORIENTATION_ROTATE_270:
+                        matrix.setRotate(-90);
+                        break;
+                    default:
+                        // 无需调整
+                        break;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return matrix;
+    }
+
+    public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // 计算最大的inSampleSize值，该值是2的幂，并保持高度和宽度大于所需高度和宽度的一半。
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
+    }
+
+    /**
+     * 保留图像Exif信息
+     *
+     * @param oldFilePath
+     * @param newFilePath
+     * @throws Exception
+     */
+    public static void saveExif(String oldFilePath, String newFilePath) throws Exception {
+        ExifInterface oldExif = new ExifInterface(oldFilePath);
+        ExifInterface newExif = new ExifInterface(newFilePath);
+        Class<ExifInterface> cls = ExifInterface.class;
+        Field[] fields = cls.getFields();
+        for (int i = 0; i < fields.length; i++) {
+            String fieldName = fields[i].getName();
+            if (!TextUtils.isEmpty(fieldName) && fieldName.startsWith("TAG")) {
+                String fieldValue = fields[i].get(cls).toString();
+                String attribute = oldExif.getAttribute(fieldValue);
+                if (attribute != null) {
+                    newExif.setAttribute(fieldValue, attribute);
+                }
+            }
+        }
+        newExif.saveAttributes();
     }
 }
