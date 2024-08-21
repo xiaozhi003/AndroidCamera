@@ -21,7 +21,7 @@
  *  may have a different license, see the respective files.
  */
 
-package com.android.xz.camera.encoder;
+package com.android.xz.encoder;
 
 public interface IVideoEncoder {
     public boolean frameAvailableSoon();

@@ -21,7 +21,7 @@
  *  may have a different license, see the respective files.
  */
 
-package com.android.xz.camera.encoder;
+package com.android.xz.encoder;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -34,15 +34,9 @@ import com.android.xz.util.Logs;
 
 import java.io.IOException;
 
-/**
- * Encode texture images as H.264 video
- * using MediaCodec.
- * This class render texture images into recording surface
- * camera from MediaCodec encoder using Open GL|ES
- */
-public class MediaVideoEncoder extends MediaEncoder implements IVideoEncoder {
+public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
     private static final boolean DEBUG = Logs.issIsLogEnabled();    // TODO set false on release
-    private static final String TAG = "MediaVideoEncoder";
+    private static final String TAG = "MediaSurfaceEncoder";
 
     private static final String MIME_TYPE = "video/avc";
     // parameters for recording
@@ -52,30 +46,22 @@ public class MediaVideoEncoder extends MediaEncoder implements IVideoEncoder {
 
     private Surface mSurface;
 
-    public MediaVideoEncoder(final MediaMuxerWrapper muxer, final int width, final int height, final MediaEncoderListener listener) {
+    public MediaSurfaceEncoder(final MediaMuxerWrapper muxer, final int width, final int height, final MediaEncoderListener listener) {
         super(muxer, listener);
         if (DEBUG) Log.i(TAG, "MediaVideoEncoder: ");
         mWidth = width;
         mHeight = height;
     }
 
-    public boolean frameAvailableSoon(final float[] tex_matrix) {
-        boolean result;
-        result = super.frameAvailableSoon();
-        return result;
+    /**
+     * Returns the encoder's input surface.
+     */
+    public Surface getInputSurface() {
+        return mSurface;
     }
 
-    /**
-     * This method does not work correctly on this class,
-     * use #frameAvailableSoon(final float[]) instead
-     *
-     * @return
-     */
-    @Override
-    public boolean frameAvailableSoon() {
-        boolean result;
-        result = super.frameAvailableSoon();
-        return result;
+    public void setInputSurface(Surface surface) {
+        mSurface = surface;
     }
 
     @Override
@@ -198,9 +184,6 @@ public class MediaVideoEncoder extends MediaEncoder implements IVideoEncoder {
 
     static {
         recognizedFormats = new int[]{
-//        	MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar,
-//        	MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-//        	MediaCodecInfo.CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface,
         };
     }

@@ -21,7 +21,7 @@
  *  may have a different license, see the respective files.
  */
 
-package com.android.xz.camera.encoder;
+package com.android.xz.encoder;
 
 import android.content.Context;
 import android.media.MediaCodec;
