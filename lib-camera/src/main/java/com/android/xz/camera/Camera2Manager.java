@@ -106,6 +106,7 @@ public class Camera2Manager implements ICameraManager {
      * 设备方向，由相机传感器获取
      */
     private int mDeviceOrientation = 0;
+    private int mLatestRotation = 0;
 
     private CameraCallback mCameraCallback;
     private Handler mUIHandler;
@@ -507,7 +508,12 @@ public class Camera2Manager implements ICameraManager {
         // the image upright relative to the device orientation
         int jpegOrientation = (sensorOrientation + deviceOrientation + 360) % 360;
         Log.d(TAG, "jpegOrientation: " + jpegOrientation);
+        mLatestRotation = jpegOrientation;
         return jpegOrientation;
+    }
+
+    public int getLatestRotation() {
+        return mLatestRotation;
     }
 
     public boolean isFrontCamera() {

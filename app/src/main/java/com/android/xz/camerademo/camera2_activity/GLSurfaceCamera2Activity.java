@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.media.Image;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -68,15 +69,19 @@ public class GLSurfaceCamera2Activity extends AppCompatActivity {
             ByteBuffer buffer = images[0].getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
-            if (mCameraManager.isFrontCamera()) {
-                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                // 前置摄像头需要左右镜像
-                Bitmap rotateBitmap = ImageUtils.rotateBitmap(bitmap, 0, true, true);
-                ImageUtils.saveBitmap(rotateBitmap);
-                rotateBitmap.recycle();
-            } else {
-                ImageUtils.saveImage(bytes);
-            }
+
+            long time = System.currentTimeMillis();
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            Log.d(TAG, "BitmapFactory.decodeByteArray time: " + (System.currentTimeMillis() - time));
+            int rotation = mCameraManager.getLatestRotation();
+            time = System.currentTimeMillis();
+            Bitmap rotateBitmap = ImageUtils.rotateBitmap(bitmap, rotation, mCameraManager.isFrontCamera(), true);
+            Log.d(TAG, "rotateBitmap time: " + (System.currentTimeMillis() - time));
+            time = System.currentTimeMillis();
+            ImageUtils.saveBitmap(rotateBitmap);
+            Log.d(TAG, "saveBitmap time: " + (System.currentTimeMillis() - time));
+            rotateBitmap.recycle();
+
             images[0].close();
             return ImageUtils.getLatestThumbBitmap();
         }
