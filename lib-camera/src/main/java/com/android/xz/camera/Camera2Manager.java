@@ -363,6 +363,7 @@ public class Camera2Manager implements ICameraManager {
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession session) {
                     Log.e(TAG, "ConfigureFailed. session: " + session);
+                    previewing = false;
                 }
             }, mBackgroundHandler); // handle 传入 null 表示使用当前线程的 Looper
         } catch (CameraAccessException e) {
@@ -395,6 +396,10 @@ public class Camera2Manager implements ICameraManager {
 
     @Override
     public void startPreview(SurfaceHolder surfaceHolder) {
+        if (previewing) {
+            return;
+        }
+        previewing = true;
         mPreviewSurface = surfaceHolder.getSurface();
         initPreviewRequest();
         createCommonSession();
@@ -402,6 +407,10 @@ public class Camera2Manager implements ICameraManager {
 
     @Override
     public void startPreview(SurfaceTexture surfaceTexture) {
+        if (previewing) {
+            return;
+        }
+        previewing = true;
         surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         mPreviewSurface = new Surface(surfaceTexture);
         initPreviewRequest();
@@ -414,15 +423,11 @@ public class Camera2Manager implements ICameraManager {
             Log.w(TAG, "startPreview: mCaptureSession or mPreviewRequestBuilder is null");
             return;
         }
-        if (previewing) {
-            return;
-        }
         try {
             // 开始预览，即一直发送预览的请求
             CaptureRequest captureRequest = mPreviewRequestBuilder.build();
             mCaptureSession.setRepeatingRequest(captureRequest, null, mBackgroundHandler);
             Logs.i(TAG, "name:" + Thread.currentThread().getName());
-            previewing = true;
             mUIHandler.post(() -> onPreview(mPreviewWidth, mPreviewHeight));
         } catch (CameraAccessException e) {
             e.printStackTrace();

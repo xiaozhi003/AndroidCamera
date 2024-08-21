@@ -195,6 +195,5 @@ public class Camera2SurfaceView extends SurfaceView implements SurfaceHolder.Cal
 
     @Override
     public void onClose() {
-        getSurfaceHolder().setFixedSize(0, 0);
     }
 }
