@@ -14,7 +14,7 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AndroidCamera"
+        android:theme="@style/Theme.AndroidCamera.NoActionBar"
         tools:targetApi="31">
         <activity
             android:name=".camera_activity.SurfaceCameraActivity"
@@ -37,6 +37,7 @@
             android:exported="false" />
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.AndroidCamera"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,8 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.AndroidCamera" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+    <style name="Base.Theme.AndroidCamera" parent="Theme.MaterialComponents.Light.DarkActionBar.Bridge">
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimaryDark">@color/black</item>
+    </style>
+
+    <style name="Theme.AndroidCamera.NoActionBar" parent="Theme.MaterialComponents.Light.NoActionBar.Bridge">
         <item name="colorPrimaryDark">@color/black</item>
     </style>
 </resources>
