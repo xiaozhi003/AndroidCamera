@@ -143,6 +143,10 @@ public class Camera2GLSurfaceView extends GLSurfaceView implements SurfaceTextur
         mCameraHandler.invalidateHandler();
     }
 
+    public ICameraManager getCameraManager() {
+        return mCameraManager;
+    }
+
     /**
      * 打开摄像头
      */

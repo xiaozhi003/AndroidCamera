@@ -35,6 +35,7 @@ public class SurfaceCamera2Activity extends AppCompatActivity {
         mCameraManager = (Camera2Manager) mCameraSurfaceView.getCameraManager();
         mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
+        findViewById(R.id.switchCameraBtn).setOnClickListener(v -> mCameraManager.switchCamera());
         mPictureIv = findViewById(R.id.pictureIv);
     }
 
@@ -61,8 +62,12 @@ public class SurfaceCamera2Activity extends AppCompatActivity {
             ByteBuffer buffer = images[0].getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
+
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            Logs.i(TAG, "bitmap " + bitmap.getWidth() + "x" + bitmap.getHeight());
             if (mCameraManager.isFrontCamera()) {
-                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//                Logs.i(TAG, "bitmap " + bitmap.getWidth() + "x" + bitmap.getHeight());
                 // 前置摄像头需要左右镜像
                 Bitmap rotateBitmap = ImageUtils.rotateBitmap(bitmap, 0, true, true);
                 ImageUtils.saveBitmap(rotateBitmap);

@@ -169,6 +169,15 @@ public class Camera2SurfaceView extends SurfaceView implements SurfaceHolder.Cal
         Logs.v(TAG, "onOpen.");
         mPreviewSize = mCameraManager.getPreviewSize();
         getSurfaceHolder().setFixedSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        float ratio;
+        if (mSurfaceWidth > mSurfaceHeight) {
+            ratio = mSurfaceHeight * 1.0f / mSurfaceWidth;
+        } else {
+            ratio = mSurfaceWidth * 1.0f / mSurfaceHeight;
+        }
+        if (ratio == mPreviewSize.getHeight() * 1f / mPreviewSize.getWidth()) {
+            mCameraManager.startPreview(getSurfaceHolder());
+        }
     }
 
     @Override
@@ -186,5 +195,6 @@ public class Camera2SurfaceView extends SurfaceView implements SurfaceHolder.Cal
 
     @Override
     public void onClose() {
+        getSurfaceHolder().setFixedSize(0, 0);
     }
 }

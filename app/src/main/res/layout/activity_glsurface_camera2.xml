@@ -4,11 +4,45 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
+    android:orientation="vertical"
     tools:context=".camera_activity.TextureCameraActivity">
 
     <com.android.xz.view.Camera2GLSurfaceView
         android:id="@+id/glSurfaceView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/switchCameraBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="32dp"
+            android:src="@drawable/ic_switch_camera" />
+
+        <Button
+            android:id="@+id/captureBtn"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/btn_capture_bg"
+            android:elevation="10dp" />
+
+        <ImageView
+            android:id="@+id/pictureIv"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="32dp"
+            android:scaleType="centerCrop" />
+
+    </RelativeLayout>
 
 </LinearLayout>

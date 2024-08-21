@@ -11,7 +11,7 @@
 
     <!-- 描边 -->
     <stroke
-        android:width="6dp"
+        android:width="5dp"
         android:color="#CCCCCC"
         android:dashGap="0dp"
         android:dashWidth="0dp"/>

@@ -6,7 +6,7 @@
 
     <!-- 填充 -->
     <solid
-        android:color="#DDDDDD"/>
+        android:color="#FBF9F9"/>
     <!-- 填充的颜色 -->
 
     <!-- 描边 -->
