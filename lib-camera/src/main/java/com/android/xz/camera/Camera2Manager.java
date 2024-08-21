@@ -126,9 +126,6 @@ public class Camera2Manager implements ICameraManager {
             Log.d(TAG, "onOpened");
             mCameraDevice = camera;
             mUIHandler.post(() -> onOpen());
-
-//            initPreviewRequest();
-//            createCommonSession();
         }
 
         @Override
