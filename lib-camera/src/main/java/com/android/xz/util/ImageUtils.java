@@ -7,12 +7,13 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.ExifInterface;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Size;
+
+import androidx.exifinterface.media.ExifInterface;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -156,46 +157,106 @@ public class ImageUtils {
         return bitmap;
     }
 
+    public static Bitmap getCorrectOrientationBitmap(String filePath, Size requestSize) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(filePath, options);
+
+        // 计算缩放比例
+        options.inSampleSize = calculateInSampleSize(options, requestSize.getWidth(), requestSize.getHeight());
+
+        // 使用新的缩放比例在此解码图片
+        options.inJustDecodeBounds = false;
+        Bitmap bitmap = BitmapFactory.decodeFile(filePath, options);
+
+        Matrix matrix = getJPEGMatrix(filePath);
+        if (!matrix.isIdentity()) {
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        }
+
+        return bitmap;
+    }
+
     public static Matrix getJPEGMatrix(byte[] bytes) {
         Matrix matrix = new Matrix();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            try {
-                InputStream inputStream = new ByteArrayInputStream(bytes);
-                ExifInterface exifInterface = new ExifInterface(inputStream);
-                int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-                Logs.i(TAG, "orientation: " + orientation);
+        try {
+            InputStream inputStream = new ByteArrayInputStream(bytes);
+            ExifInterface exifInterface = new ExifInterface(inputStream);
+            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+            Logs.i(TAG, "orientation: " + orientation);
 
-                switch (orientation) {
-                    case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
-                        matrix.setScale(-1, 1);
-                        break;
-                    case ExifInterface.ORIENTATION_ROTATE_180:
-                        matrix.setRotate(180);
-                        break;
-                    case ExifInterface.ORIENTATION_FLIP_VERTICAL:
-                        matrix.setScale(1, -1);
-                        break;
-                    case ExifInterface.ORIENTATION_TRANSPOSE:
-                        matrix.setRotate(90);
-                        matrix.postScale(-1, 1);
-                        break;
-                    case ExifInterface.ORIENTATION_ROTATE_90:
-                        matrix.setRotate(90);
-                        break;
-                    case ExifInterface.ORIENTATION_TRANSVERSE:
-                        matrix.setRotate(-90);
-                        matrix.postScale(-1, 1);
-                        break;
-                    case ExifInterface.ORIENTATION_ROTATE_270:
-                        matrix.setRotate(-90);
-                        break;
-                    default:
-                        // 无需调整
-                        break;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                    matrix.setScale(-1, 1);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    matrix.setRotate(180);
+                    break;
+                case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                    matrix.setScale(1, -1);
+                    break;
+                case ExifInterface.ORIENTATION_TRANSPOSE:
+                    matrix.setRotate(90);
+                    matrix.postScale(-1, 1);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    matrix.setRotate(90);
+                    break;
+                case ExifInterface.ORIENTATION_TRANSVERSE:
+                    matrix.setRotate(-90);
+                    matrix.postScale(-1, 1);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    matrix.setRotate(-90);
+                    break;
+                default:
+                    // 无需调整
+                    break;
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return matrix;
+    }
+
+    public static Matrix getJPEGMatrix(String filePath) {
+        Matrix matrix = new Matrix();
+        try {
+            ExifInterface exifInterface = new ExifInterface(filePath);
+            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+            Logs.i(TAG, "orientation: " + orientation);
+
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                    matrix.setScale(-1, 1);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    matrix.setRotate(180);
+                    break;
+                case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                    matrix.setScale(1, -1);
+                    break;
+                case ExifInterface.ORIENTATION_TRANSPOSE:
+                    matrix.setRotate(90);
+                    matrix.postScale(-1, 1);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    matrix.setRotate(90);
+                    break;
+                case ExifInterface.ORIENTATION_TRANSVERSE:
+                    matrix.setRotate(-90);
+                    matrix.postScale(-1, 1);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    matrix.setRotate(-90);
+                    break;
+                default:
+                    // 无需调整
+                    break;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return matrix;
     }
