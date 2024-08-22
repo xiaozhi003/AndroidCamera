@@ -12,7 +12,6 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Size;
 
 import androidx.exifinterface.media.ExifInterface;
@@ -57,10 +56,10 @@ public class ImageUtils {
         if (flipHorizontal) {
             matrix.postScale(-1, 1);
         }
-        Log.d(TAG, "source width: " + source.getWidth() + ", height: " + source.getHeight());
-        Log.d(TAG, "rotateBitmap: degree: " + degree);
+        Logs.d(TAG, "source width: " + source.getWidth() + ", height: " + source.getHeight());
+        Logs.d(TAG, "rotateBitmap: degree: " + degree);
         Bitmap rotateBitmap = Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, false);
-        Log.d(TAG, "rotate width: " + rotateBitmap.getWidth() + ", height: " + rotateBitmap.getHeight());
+        Logs.d(TAG, "rotate width: " + rotateBitmap.getWidth() + ", height: " + rotateBitmap.getHeight());
         if (recycle) {
             source.recycle();
         }
@@ -78,7 +77,7 @@ public class ImageUtils {
     private static void saveImageToDCIM(byte[] jpeg) {
         String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
-        Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
+        Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
 
         // 新建文件夹
         FileUtils.makeDirs(outFile.getAbsolutePath());
@@ -128,7 +127,7 @@ public class ImageUtils {
     private static void saveImageNone(byte[] jpeg) {
         String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
-        Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
+        Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
 
         boolean ok = FileUtils.writeFile(outFile.getAbsolutePath(), jpeg);
         if (ok) {
@@ -147,7 +146,7 @@ public class ImageUtils {
     private static void saveBitmapToDCIM(Bitmap bitmap) {
         String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
-        Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
+        Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
 
         // 新建文件夹
         FileUtils.makeDirs(outFile.getAbsolutePath());
@@ -199,12 +198,12 @@ public class ImageUtils {
     private static void saveBitmapNone(Bitmap bitmap) {
         String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
-        Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
+        Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
         FileOutputStream os = null;
         try {
             os = new FileOutputStream(outFile);
             boolean success = bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
-            Log.d(TAG, "saveBitmap: " + success);
+            Logs.d(TAG, "saveBitmap: " + success);
             if (success) {
                 insertToDB(outFile.getAbsolutePath());
             }
@@ -241,8 +240,7 @@ public class ImageUtils {
             long id = cursor.getLong(0);
             bitmap = MediaStore.Images.Thumbnails.getThumbnail(sContext.getContentResolver(), id, MediaStore.Images
                     .Thumbnails.MICRO_KIND, null);
-            Log.d(TAG, "bitmap width: " + bitmap.getWidth());
-            Log.d(TAG, "bitmap height: " + bitmap.getHeight());
+            Logs.d(TAG, "bitmap size " + (bitmap == null ? 0 : bitmap.getWidth()) + "x" + (bitmap == null ? 0 : bitmap.getHeight()));
         }
         cursor.close();
         return bitmap;
