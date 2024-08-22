@@ -7,6 +7,8 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.TextUtils;
@@ -20,6 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -31,10 +34,14 @@ public class ImageUtils {
 
     public static void init(Context context) {
         sContext = context;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            GALLERY_PATH = Environment.DIRECTORY_DCIM + File.separator + "Camera";
+        } else {
+            GALLERY_PATH = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + File.separator + "Camera";
+        }
     }
 
-    private static final String GALLERY_PATH = Environment.getExternalStoragePublicDirectory(Environment
-            .DIRECTORY_DCIM) + File.separator + "Camera";
+    private static String GALLERY_PATH = "";
 
     private static final String[] STORE_IMAGES = {
             MediaStore.Images.Thumbnails._ID,
@@ -61,30 +68,135 @@ public class ImageUtils {
     }
 
     public static void saveImage(byte[] jpeg) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            saveImageToDCIM(jpeg);
+        } else {
+            saveImageNone(jpeg);
+        }
+    }
+
+    private static void saveImageToDCIM(byte[] jpeg) {
         String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
         Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
-        FileOutputStream os = null;
+
+        // 新建文件夹
+        FileUtils.makeDirs(outFile.getAbsolutePath());
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.TITLE, fileName);
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+        contentValues.put(MediaStore.MediaColumns.DATE_TAKEN, fileName);
+        //应用下的绝对路径
+        contentValues.put(MediaStore.MediaColumns.DATA, outFile.getAbsolutePath());
+        //该媒体项在存储设备中的相对路径，该媒体项将在其中保留
+        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, GALLERY_PATH);
+
+        Uri uri = null;
+        OutputStream outputStream = null;
+        ContentResolver localContentResolver = sContext.getContentResolver();
+
         try {
-            os = new FileOutputStream(outFile);
-            os.write(jpeg);
-            os.flush();
-            os.close();
+            uri = localContentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+
+            outputStream = localContentResolver.openOutputStream(uri);
+
+            // 将图片数据保存到Uri对应的数据节点中
+            outputStream.write(jpeg);
+
+            outputStream.flush();
+            outputStream.close();
+
             insertToDB(outFile.getAbsolutePath());
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+            if (uri != null) {
+                localContentResolver.delete(uri, null, null);
+            }
         } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            try {
+                if (outputStream != null) {
+                    outputStream.close();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
 
+    private static void saveImageNone(byte[] jpeg) {
+        String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
+        File outFile = new File(GALLERY_PATH, fileName);
+        Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
+
+        boolean ok = FileUtils.writeFile(outFile.getAbsolutePath(), jpeg);
+        if (ok) {
+            insertToDB(outFile.getAbsolutePath());
+        }
+    }
+
     public static void saveBitmap(Bitmap bitmap) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            saveBitmapToDCIM(bitmap);
+        } else {
+            saveBitmapNone(bitmap);
+        }
+    }
+
+    private static void saveBitmapToDCIM(Bitmap bitmap) {
+        String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
+        File outFile = new File(GALLERY_PATH, fileName);
+        Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
+
+        // 新建文件夹
+        FileUtils.makeDirs(outFile.getAbsolutePath());
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.TITLE, fileName);
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+        contentValues.put(MediaStore.MediaColumns.DATE_TAKEN, fileName);
+        //应用下的绝对路径
+        contentValues.put(MediaStore.MediaColumns.DATA, outFile.getAbsolutePath());
+        //该媒体项在存储设备中的相对路径，该媒体项将在其中保留
+        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, GALLERY_PATH);
+
+        Uri uri = null;
+        OutputStream outputStream = null;
+        ContentResolver localContentResolver = sContext.getContentResolver();
+
+        try {
+            uri = localContentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+
+            outputStream = localContentResolver.openOutputStream(uri);
+
+            // 将bitmap图片保存到Uri对应的数据节点中
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+
+            outputStream.flush();
+            outputStream.close();
+
+            insertToDB(outFile.getAbsolutePath());
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (uri != null) {
+                localContentResolver.delete(uri, null, null);
+            }
+        } finally {
+            bitmap.recycle();
+
+            try {
+                if (outputStream != null) {
+                    outputStream.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void saveBitmapNone(Bitmap bitmap) {
         String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
         Log.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());

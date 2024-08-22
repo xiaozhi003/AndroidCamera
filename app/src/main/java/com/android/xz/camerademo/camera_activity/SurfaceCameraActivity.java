@@ -26,7 +26,7 @@ public class SurfaceCameraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_surface_camera);
 
-        mCameraSurfaceView = findViewById(R.id.surfaceView);
+        mCameraSurfaceView = findViewById(R.id.cameraView);
         mCameraManager = (CameraManager) mCameraSurfaceView.getCameraManager();
         mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());

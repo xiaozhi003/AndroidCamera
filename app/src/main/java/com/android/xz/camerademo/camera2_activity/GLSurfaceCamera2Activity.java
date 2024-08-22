@@ -28,7 +28,7 @@ public class GLSurfaceCamera2Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_glsurface_camera2);
 
-        mCameraGLSurfaceView = findViewById(R.id.glSurfaceView);
+        mCameraGLSurfaceView = findViewById(R.id.cameraView);
         mCameraManager = (Camera2Manager) mCameraGLSurfaceView.getCameraManager();
 //        mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());

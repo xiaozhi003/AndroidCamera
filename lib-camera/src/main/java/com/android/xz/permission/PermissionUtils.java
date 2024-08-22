@@ -90,7 +90,13 @@ public class PermissionUtils {
         //逐个判断你要的权限是否已经通过
         for (int i = 0; i < permissions.length; i++) {
             if (context.checkSelfPermission(permissions[i]) != PackageManager.PERMISSION_GRANTED) {
-                permissionList.add(permissions[i]);//添加还未授予的权限
+                if (permissions[i] == Manifest.permission.WRITE_EXTERNAL_STORAGE) {
+                    if (Build.VERSION.SDK_INT < ANDROID_R) {
+                        permissionList.add(permissions[i]);
+                    }
+                } else {
+                    permissionList.add(permissions[i]);//添加还未授予的权限
+                }
             }
         }
         String[] realNeedRequest = permissionList.toArray(new String[permissionList.size()]);
@@ -100,7 +106,6 @@ public class PermissionUtils {
         } else {
             // 说明权限都已经通过
             permissionsResult.passPermissions();
-            return;
         }
     }
 

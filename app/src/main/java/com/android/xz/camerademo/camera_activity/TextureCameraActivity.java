@@ -26,7 +26,7 @@ public class TextureCameraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_texture_camera);
 
-        mCameraTextureView = findViewById(R.id.textureView);
+        mCameraTextureView = findViewById(R.id.cameraView);
         mCameraManager = (CameraManager) mCameraTextureView.getCameraManager();
         mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
