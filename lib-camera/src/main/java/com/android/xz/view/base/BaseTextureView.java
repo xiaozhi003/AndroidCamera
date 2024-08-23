@@ -1,6 +1,7 @@
 package com.android.xz.view.base;
 
 import android.content.Context;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
 import android.view.TextureView;
@@ -102,6 +103,14 @@ public abstract class BaseTextureView extends TextureView implements TextureView
             } else {
                 setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
             }
+        }
+
+        if (isMirror) {
+            Matrix transform = new Matrix();
+            transform.setScale(-1, 1, getMeasuredWidth() / 2, 0);
+            setTransform(transform);
+        } else {
+            setTransform(null);
         }
     }
 

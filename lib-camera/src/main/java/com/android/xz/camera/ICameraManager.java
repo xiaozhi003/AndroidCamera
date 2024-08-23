@@ -21,11 +21,17 @@ public interface ICameraManager {
 
     void setCameraId(int cameraId);
 
+    int getCameraId();
+
     boolean isOpen();
 
     Size getPreviewSize();
 
     void setPreviewSize(Size size);
+
+    int getOrientation();
+
+    int getDisplayOrientation();
 
     void setCameraCallback(CameraCallback cameraCallback);
     void setPreviewBufferCallback(PreviewBufferCallback previewBufferCallback);

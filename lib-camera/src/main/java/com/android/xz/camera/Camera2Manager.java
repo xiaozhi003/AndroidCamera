@@ -156,6 +156,11 @@ public class Camera2Manager implements ICameraManager {
         mCameraId = cameraId;
     }
 
+    @Override
+    public int getCameraId() {
+        return mCameraId;
+    }
+
     public Camera2Manager(Context context) {
         mContext = context;
         mUIHandler = new Handler(mContext.getMainLooper());
@@ -459,6 +464,16 @@ public class Camera2Manager implements ICameraManager {
         mPreviewWidth = mPreviewSize.getWidth();
         mPreviewHeight = mPreviewSize.getHeight();
         mPreviewScale = mPreviewHeight * 1f / mPreviewWidth;
+    }
+
+    @Override
+    public int getOrientation() {
+        return mSensorOrientation;
+    }
+
+    @Override
+    public int getDisplayOrientation() {
+        return mDisplayRotation;
     }
 
     public void captureStillPicture(ImageReader.OnImageAvailableListener onImageAvailableListener) {

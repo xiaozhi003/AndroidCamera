@@ -30,6 +30,13 @@
         android:layout_height="wrap_content"/>
 
     <Button
+        android:id="@+id/glTextureCameraBtn"
+        android:textAllCaps="false"
+        android:text="Camera GLTextureView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
         android:id="@+id/surfaceCamera2Btn"
         android:textAllCaps="false"
         android:text="Camera2 SurfaceView"
@@ -47,6 +54,13 @@
         android:id="@+id/glSurfaceCamera2Btn"
         android:textAllCaps="false"
         android:text="Camera2 GLSurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/glTextureCamera2Btn"
+        android:textAllCaps="false"
+        android:text="Camera2 GLTextureView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 

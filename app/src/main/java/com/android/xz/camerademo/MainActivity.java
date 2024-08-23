@@ -12,9 +12,11 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.android.xz.camerademo.camera2_activity.GLSurfaceCamera2Activity;
+import com.android.xz.camerademo.camera2_activity.GLTextureCamera2Activity;
 import com.android.xz.camerademo.camera2_activity.SurfaceCamera2Activity;
 import com.android.xz.camerademo.camera2_activity.TextureCamera2Activity;
 import com.android.xz.camerademo.camera_activity.GLSurfaceCameraActivity;
+import com.android.xz.camerademo.camera_activity.GLTextureCameraActivity;
 import com.android.xz.camerademo.camera_activity.SurfaceCameraActivity;
 import com.android.xz.camerademo.camera_activity.TextureCameraActivity;
 import com.android.xz.permission.IPermissionsResult;
@@ -34,10 +36,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         findViewById(R.id.surfaceCameraBtn).setOnClickListener(this);
         findViewById(R.id.textureCameraBtn).setOnClickListener(this);
+        findViewById(R.id.glTextureCameraBtn).setOnClickListener(this);
         findViewById(R.id.glSurfaceCameraBtn).setOnClickListener(this);
         findViewById(R.id.surfaceCamera2Btn).setOnClickListener(this);
         findViewById(R.id.textureCamera2Btn).setOnClickListener(this);
         findViewById(R.id.glSurfaceCamera2Btn).setOnClickListener(this);
+        findViewById(R.id.glTextureCamera2Btn).setOnClickListener(this);
     }
 
     @Override
@@ -52,6 +56,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     case R.id.textureCameraBtn:
                         startActivity(new Intent(mContext, TextureCameraActivity.class));
                         break;
+                    case R.id.glTextureCameraBtn:
+                        startActivity(new Intent(mContext, GLTextureCameraActivity.class));
+                        break;
                     case R.id.glSurfaceCameraBtn:
                         startActivity(new Intent(mContext, GLSurfaceCameraActivity.class));
                         break;
@@ -63,6 +70,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case R.id.glSurfaceCamera2Btn:
                         startActivity(new Intent(mContext, GLSurfaceCamera2Activity.class));
+                        break;
+                        case R.id.glTextureCamera2Btn:
+                        startActivity(new Intent(mContext, GLTextureCamera2Activity.class));
                         break;
                 }
             }
