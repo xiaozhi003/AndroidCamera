@@ -1,6 +1,7 @@
 package com.android.xz.view.base;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
@@ -9,12 +10,12 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Surface;
-import android.view.TextureView;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
+import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.gles.Drawable2d;
@@ -28,15 +29,16 @@ import com.android.xz.util.Logs;
 
 import java.lang.ref.WeakReference;
 
-public abstract class BaseGLTextureView extends TextureView implements TextureView.SurfaceTextureListener, SurfaceTexture.OnFrameAvailableListener, CameraCallback {
-    private static final String TAG = BaseGLTextureView.class.getSimpleName();
+public abstract class BaseGLESSurfaceView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, CameraCallback {
+
+    private static final String TAG = BaseGLESSurfaceView.class.getSimpleName();
 
     private static final int DEFAULT_ZOOM_PERCENT = 0;      // 0-100
     private static final int DEFAULT_SIZE_PERCENT = 100;     // 0-100
     private static final int DEFAULT_ROTATE_PERCENT = 0;    // 0-100
 
     private Context mContext;
-    private SurfaceTexture mSurfaceTexture;
+    private SurfaceHolder mSurfaceHolder;
     private SurfaceTexture mPreviewSurfaceTexture;
     private MainHandler mMainHandler;
     private boolean isMirror;
@@ -48,31 +50,34 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     private int mPreviewHeight;
     private RenderThread mRenderThread;
 
-    public BaseGLTextureView(@NonNull Context context) {
+    public BaseGLESSurfaceView(Context context) {
         super(context);
         init(context);
     }
 
-    public BaseGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public BaseGLESSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    public BaseGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public BaseGLESSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }
 
-    public BaseGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public BaseGLESSurfaceView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context);
     }
 
     private void init(Context context) {
         mContext = context;
+        mSurfaceHolder = getHolder();
+        mSurfaceHolder.setFormat(PixelFormat.TRANSPARENT);//translucent半透明 transparent透明
+        mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        mSurfaceHolder.addCallback(this);
         mCameraManager = createCameraManager(context);
         mCameraManager.setCameraCallback(this);
-        setSurfaceTextureListener(this);
         mMainHandler = new MainHandler(this);
         mRenderThread = new RenderThread(mMainHandler);
         mRenderThread.start();
@@ -80,6 +85,43 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     }
 
     public abstract ICameraManager createCameraManager(Context context);
+
+    @Override
+    public void surfaceCreated(@NonNull SurfaceHolder holder) {
+        Logs.i(TAG, "surfaceCreated.");
+        mSurfaceHolder = holder;
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendSurfaceAvailable(mSurfaceHolder, true);
+            }
+        }
+    }
+
+    @Override
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+        Logs.i(TAG, "surfaceChanged " + width + "x" + height);
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendSurfaceChanged(0, width, height);
+            }
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+        Logs.v(TAG, "onSurfaceTextureDestroyed.");
+        closeCamera();
+        mSurfaceHolder = null;
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendSurfaceDestroyed();
+            }
+        }
+        hasSurface = false;
+    }
 
     /**
      * 获取摄像头工具类
@@ -132,14 +174,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
             }
         }
-
-        if (isMirror) {
-            android.graphics.Matrix transform = new android.graphics.Matrix();
-            transform.setScale(-1, 1, getMeasuredWidth() / 2, 0);
-            setTransform(transform);
-        } else {
-            setTransform(null);
-        }
     }
 
     /**
@@ -147,51 +181,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
      *
      * @return
      */
-    @Override
     public SurfaceTexture getSurfaceTexture() {
         return mPreviewSurfaceTexture;
-    }
-
-    @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
-        Logs.i(TAG, "onSurfaceTextureAvailable.");
-        mSurfaceTexture = surfaceTexture;
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendSurfaceAvailable(mSurfaceTexture, true);
-            }
-        }
-    }
-
-    @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
-        Logs.i(TAG, "onSurfaceTextureSizeChanged " + width + "x" + height);
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendSurfaceChanged(0, width, height);
-            }
-        }
-    }
-
-    @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-        Logs.v(TAG, "onSurfaceTextureDestroyed.");
-        closeCamera();
-        mSurfaceTexture = null;
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendSurfaceDestroyed();
-            }
-        }
-        hasSurface = false;
-        return true;
-    }
-
-    @Override
-    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
     }
 
     @Override
@@ -315,9 +306,9 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
         public static final int MSG_SURFACE_CHANGED = 1;
 
-        private WeakReference<BaseGLTextureView> mWeakGLSurfaceView;
+        private WeakReference<BaseGLESSurfaceView> mWeakGLSurfaceView;
 
-        public MainHandler(BaseGLTextureView view) {
+        public MainHandler(BaseGLESSurfaceView view) {
             mWeakGLSurfaceView = new WeakReference<>(view);
         }
 
@@ -334,7 +325,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             super.handleMessage(msg);
             int what = msg.what;
 
-            BaseGLTextureView view = mWeakGLSurfaceView.get();
+            BaseGLESSurfaceView view = mWeakGLSurfaceView.get();
             if (view == null) {
                 return;
             }
@@ -383,8 +374,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
          * <p>
          * Call from UI thread.
          */
-        public void sendSurfaceAvailable(SurfaceTexture surfaceTexture, boolean newSurface) {
-            sendMessage(obtainMessage(MSG_SURFACE_AVAILABLE, newSurface ? 1 : 0, 0, surfaceTexture));
+        public void sendSurfaceAvailable(SurfaceHolder surfaceHolder, boolean newSurface) {
+            sendMessage(obtainMessage(MSG_SURFACE_AVAILABLE, newSurface ? 1 : 0, 0, surfaceHolder));
         }
 
         /**
@@ -456,7 +447,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
             switch (what) {
                 case MSG_SURFACE_AVAILABLE:
-                    renderThread.surfaceAvailable((SurfaceTexture) msg.obj, msg.arg1 != 0);
+                    renderThread.surfaceAvailable((SurfaceHolder) msg.obj, msg.arg1 != 0);
                     break;
                 case MSG_SURFACE_CHANGED:
                     renderThread.surfaceChanged(msg.arg1, msg.arg2);
@@ -576,8 +567,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             return mHandler;
         }
 
-        public void surfaceAvailable(SurfaceTexture surfaceTexture, boolean newSurface) {
-            mWindowSurface = new WindowSurface(mEglCore, new Surface(surfaceTexture), false);
+        public void surfaceAvailable(SurfaceHolder surfaceHolder, boolean newSurface) {
+            mWindowSurface = new WindowSurface(mEglCore, surfaceHolder.getSurface(), false);
             mWindowSurface.makeCurrent();
 
             // Create and configure the SurfaceTexture, which will receive frames from the
@@ -721,3 +712,4 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         }
     }
 }
+ 

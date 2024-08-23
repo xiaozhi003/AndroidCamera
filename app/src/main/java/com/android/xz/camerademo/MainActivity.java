@@ -12,10 +12,12 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.android.xz.camerademo.camera2_activity.GLSurfaceCamera2Activity;
+import com.android.xz.camerademo.camera2_activity.GLSurfaceHolderCamera2Activity;
 import com.android.xz.camerademo.camera2_activity.GLTextureCamera2Activity;
 import com.android.xz.camerademo.camera2_activity.SurfaceCamera2Activity;
 import com.android.xz.camerademo.camera2_activity.TextureCamera2Activity;
 import com.android.xz.camerademo.camera_activity.GLSurfaceCameraActivity;
+import com.android.xz.camerademo.camera_activity.GLSurfaceHolderCameraActivity;
 import com.android.xz.camerademo.camera_activity.GLTextureCameraActivity;
 import com.android.xz.camerademo.camera_activity.SurfaceCameraActivity;
 import com.android.xz.camerademo.camera_activity.TextureCameraActivity;
@@ -42,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.textureCamera2Btn).setOnClickListener(this);
         findViewById(R.id.glSurfaceCamera2Btn).setOnClickListener(this);
         findViewById(R.id.glTextureCamera2Btn).setOnClickListener(this);
+        findViewById(R.id.glSurfaceHolderCameraBtn).setOnClickListener(this);
+        findViewById(R.id.glSurfaceHolderCamera2Btn).setOnClickListener(this);
     }
 
     @Override
@@ -71,8 +75,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     case R.id.glSurfaceCamera2Btn:
                         startActivity(new Intent(mContext, GLSurfaceCamera2Activity.class));
                         break;
-                        case R.id.glTextureCamera2Btn:
+                    case R.id.glTextureCamera2Btn:
                         startActivity(new Intent(mContext, GLTextureCamera2Activity.class));
+                        break;
+                    case R.id.glSurfaceHolderCameraBtn:
+                        startActivity(new Intent(mContext, GLSurfaceHolderCameraActivity.class));
+                        break;
+                    case R.id.glSurfaceHolderCamera2Btn:
+                        startActivity(new Intent(mContext, GLSurfaceHolderCamera2Activity.class));
                         break;
                 }
             }

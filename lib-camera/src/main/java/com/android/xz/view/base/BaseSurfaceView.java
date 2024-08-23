@@ -68,12 +68,8 @@ public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHold
         }
     }
 
-//    @Override
-//    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-//        Logs.i(TAG, "surfaceChanged [" + width + ", " + height + "]");
-//        mSurfaceWidth = width;
-//        mSurfaceHeight = height;
-//    }
+    @Override
+    public abstract void surfaceChanged(SurfaceHolder holder, int format, int width, int height);
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
@@ -145,11 +141,8 @@ public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHold
         }
     }
 
-//    @Override
-//    public void onOpen() {
-//        mPreviewSize = mCameraManager.getPreviewSize();
-//        mCameraManager.startPreview(getSurfaceHolder());
-//    }
+    @Override
+    public abstract void onOpen();
 
     @Override
     public void onOpenError(int error, String msg) {
