@@ -318,10 +318,9 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         }
     }
 
-    public boolean isFrontCamera() {
-        return mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT;
-    }
-
+    /**
+     * 配置Camera参数
+     */
     private void initCamera() {
         if (mCamera != null) {
             mParameters = mCamera.getParameters();
@@ -468,35 +467,11 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     }
 
     /**
-     * 设置合适的预览尺寸
+     * 获取合适的尺寸
+     *
+     * @param sizes
+     * @return
      */
-    private void setSuitablePreviewSize() {
-        List<Camera.Size> supportedPreviewSizes = mParameters.getSupportedPreviewSizes();
-        int requestPixels = mPreviewWidth * mPreviewHeight;
-        Camera.Size suitablePreviewSize = supportedPreviewSizes.get(0);
-        int diff = Integer.MAX_VALUE;
-        if (supportedPreviewSizes != null) {
-            StringBuilder previewSizesString = new StringBuilder();
-            for (Camera.Size supportedPreviewSize : supportedPreviewSizes) {
-                previewSizesString.append(supportedPreviewSize.width).append('x').append(supportedPreviewSize.height).append(' ');
-
-                int pixels = supportedPreviewSize.width * supportedPreviewSize.height;
-                if (Math.abs(requestPixels - pixels) < diff) {
-                    suitablePreviewSize = supportedPreviewSize;
-                    diff = Math.abs(requestPixels - pixels);
-                }
-            }
-            Logs.i(TAG, "支持预览尺寸：[ " + previewSizesString + "]");
-        } else {
-            Logs.e(TAG, "没有可用的预览尺寸...");
-        }
-        Logs.i(TAG, "请求预览尺寸：[" + mPreviewWidth + ", " + mPreviewHeight + "]");
-        Logs.i(TAG, "找到最合适尺寸：[" + suitablePreviewSize.width + ", " + suitablePreviewSize.height + "]");
-        if (suitablePreviewSize != null) {
-            mParameters.setPreviewSize(suitablePreviewSize.width, suitablePreviewSize.height);
-        }
-    }
-
     private Camera.Size getSuitableSize(List<Camera.Size> sizes) {
         int minDelta = Integer.MAX_VALUE; // 最小的差值，初始值应该设置大点保证之后的计算中会被重置
         int index = 0; // 最小的差值对应的索引坐标
