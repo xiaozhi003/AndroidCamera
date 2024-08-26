@@ -273,7 +273,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         private boolean mIncomingSizeUpdated;
         private int mIncomingWidth;
         private int mIncomingHeight;
-        private int mTextureId = -1;
+        private int mTextureId;
         private SurfaceTexture mSurfaceTexture;
 
         public CameraSurfaceRenderer(CameraHandler cameraHandler) {
