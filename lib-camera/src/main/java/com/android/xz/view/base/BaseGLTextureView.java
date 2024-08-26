@@ -577,7 +577,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         }
 
         public void surfaceAvailable(SurfaceTexture surfaceTexture, boolean newSurface) {
-            mWindowSurface = new WindowSurface(mEglCore, new Surface(surfaceTexture), false);
+            mWindowSurface = new WindowSurface(mEglCore, surfaceTexture);
             mWindowSurface.makeCurrent();
 
             // Create and configure the SurfaceTexture, which will receive frames from the
