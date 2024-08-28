@@ -16,7 +16,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AndroidCamera.NoActionBar"
         tools:targetApi="31">
-
+        <activity
+            android:name=".mediacodec_activity.MediaCodecSurfaceActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -56,6 +58,9 @@
             android:exported="false" />
         <activity
             android:name=".camera2_activity.GLSurfaceHolderCamera2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".mediacodec_activity.MediaCodecBufferActivity"
             android:exported="false" />
         <activity
             android:name=".MediaDisplayActivity"

@@ -18,7 +18,7 @@ import com.android.xz.util.Logs;
 public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHolder.Callback, CameraCallback {
 
     protected static final String TAG = BaseSurfaceView.class.getSimpleName();
-    SurfaceHolder mSurfaceHolder;
+    private SurfaceHolder mSurfaceHolder;
     protected Context mContext;
     private boolean hasSurface; // 是否存在摄像头显示层
     private ICameraManager mCameraManager;
@@ -43,7 +43,7 @@ public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHold
         init(context);
     }
 
-    private void init(Context context) {
+    protected void init(Context context) {
         mContext = context;
         mSurfaceHolder = getHolder();
         mSurfaceHolder.setFormat(PixelFormat.TRANSPARENT);//translucent半透明 transparent透明

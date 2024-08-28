@@ -78,4 +78,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
+    <Button
+        android:id="@+id/mediaCodecBufferBtn"
+        android:textAllCaps="false"
+        android:text="MediaCodec with Buffer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/mediaCodecSurfaceBtn"
+        android:textAllCaps="false"
+        android:text="MediaCodec with Surface"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
 </LinearLayout>

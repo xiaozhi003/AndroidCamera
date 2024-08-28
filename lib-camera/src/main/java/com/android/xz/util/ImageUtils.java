@@ -1,5 +1,6 @@
 package com.android.xz.util;
 
+import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -44,6 +47,14 @@ public class ImageUtils {
 
     public static String getGalleryPath() {
         return GALLERY_PATH;
+    }
+
+    public static String getVideoPath() {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            return sContext.getExternalFilesDir("video").getAbsolutePath();
+        } else {
+            return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + File.separator + "Camera";
+        }
     }
 
     private static final String[] STORE_IMAGES = {
@@ -440,4 +451,33 @@ public class ImageUtils {
         }
         newExif.saveAttributes();
     }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private Uri saveVideoToMediaStore(Context context, File videoFile) throws IOException {
+        // 创建一个 ContentValues 对象来存储视频文件的元数据
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Video.Media.DISPLAY_NAME, videoFile.getName());
+        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
+        values.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES);
+
+        // 获取外部存储中视频内容的 Uri
+        Uri collection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+
+        // 使用 ContentResolver 插入一个新的视频条目到 MediaStore
+        Uri videoUri = context.getContentResolver().insert(collection, values);
+
+        // 使用 ContentResolver 打开一个输出流来写入视频文件
+        try (OutputStream outputStream = context.getContentResolver().openOutputStream(videoUri)) {
+            Files.copy(videoFile.toPath(), outputStream);
+        }
+
+        // 通知媒体扫描器扫描新文件，使其出现在相册中
+        MediaScannerConnection.scanFile(context,
+                new String[]{videoFile.getAbsolutePath()},
+                new String[]{"video/*"},
+                null);
+
+        return videoUri;
+    }
+
 }

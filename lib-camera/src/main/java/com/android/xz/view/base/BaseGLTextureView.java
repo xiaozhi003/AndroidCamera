@@ -2,6 +2,8 @@ package com.android.xz.view.base;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
+import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Handler;
@@ -17,6 +19,8 @@ import androidx.annotation.Nullable;
 
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.encoder.MediaRecordListener;
+import com.android.xz.encoder.TextureMovieEncoder;
 import com.android.xz.gles.Drawable2d;
 import com.android.xz.gles.EglCore;
 import com.android.xz.gles.GlUtil;
@@ -24,9 +28,12 @@ import com.android.xz.gles.ScaledDrawable2d;
 import com.android.xz.gles.Sprite2d;
 import com.android.xz.gles.Texture2dProgram;
 import com.android.xz.gles.WindowSurface;
+import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.Date;
 
 public abstract class BaseGLTextureView extends TextureView implements TextureView.SurfaceTextureListener, SurfaceTexture.OnFrameAvailableListener, CameraCallback {
     private static final String TAG = BaseGLTextureView.class.getSimpleName();
@@ -47,6 +54,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     private int mPreviewWidth;
     private int mPreviewHeight;
     private RenderThread mRenderThread;
+    private TextureMovieEncoder mMovieEncoder;
+    private boolean mRecordingEnabled;      // controls button state
 
     public BaseGLTextureView(@NonNull Context context) {
         super(context);
@@ -74,9 +83,30 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         mCameraManager.setCameraCallback(this);
         setSurfaceTextureListener(this);
         mMainHandler = new MainHandler(this);
-        mRenderThread = new RenderThread(mMainHandler);
+        mMovieEncoder = new TextureMovieEncoder(context);
+        mRenderThread = new RenderThread(mMainHandler, mMovieEncoder);
         mRenderThread.start();
         mRenderThread.waitUntilReady();
+    }
+
+    public void startRecord() {
+        mRecordingEnabled = true;
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendRecordState(true);
+            }
+        }
+    }
+
+    public void stopRecord() {
+        mRecordingEnabled = false;
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendRecordState(false);
+            }
+        }
     }
 
     public abstract ICameraManager createCameraManager(Context context);
@@ -268,7 +298,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
             if (handler != null) {
-                handler.sendRotate(mCameraManager.getOrientation());
+                handler.sendRotate(mCameraManager.getOrientation(), mCameraManager.getCameraId());
             }
         }
     }
@@ -360,6 +390,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         private static final int MSG_ROTATE_VALUE = 7;
         private static final int MSG_POSITION = 8;
         private static final int MSG_REDRAW = 9;
+        private static final int MSG_RECORD_STATE = 10;
 
         // This shouldn't need to be a weak ref, since we'll go away when the Looper quits,
         // but no real harm in it.
@@ -430,8 +461,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
          * <p>
          * Call from UI thread.
          */
-        public void sendRotate(int rotation) {
-            sendMessage(obtainMessage(MSG_ROTATE_VALUE, rotation, 0));
+        public void sendRotate(int rotation, int cameraId) {
+            sendMessage(obtainMessage(MSG_ROTATE_VALUE, rotation, cameraId));
         }
 
         /**
@@ -441,6 +472,10 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
          */
         public void sendPreviewSize(int width, int height) {
             sendMessage(obtainMessage(MSG_SIZE_VALUE, width, height));
+        }
+
+        public void sendRecordState(boolean state) {
+            sendMessage(obtainMessage(MSG_RECORD_STATE, state));
         }
 
         @Override  // runs on RenderThread
@@ -474,7 +509,10 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                     renderThread.setCameraPreviewSize(msg.arg1, msg.arg2);
                     break;
                 case MSG_ROTATE_VALUE:
-                    renderThread.setRotate(msg.arg1);
+                    renderThread.setRotate(msg.arg1, msg.arg2);
+                    break;
+                case MSG_RECORD_STATE:
+                    renderThread.changeRecordingState((boolean) msg.obj);
                     break;
                 default:
                     throw new RuntimeException("unknown message " + what);
@@ -490,6 +528,10 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
      */
     static class RenderThread extends Thread {
 
+        private static final int RECORDING_OFF = 0;
+        private static final int RECORDING_ON = 1;
+        private static final int RECORDING_RESUMED = 2;
+
         // Used to wait for the thread to start.
         private Object mStartLock = new Object();
         private boolean mReady = false;
@@ -498,6 +540,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
         // width/height of the incoming camera preview frames
         private SurfaceTexture mPreviewTexture;
+        private int mTextureId;
 
         private float[] mDisplayProjectionMatrix = new float[16];
         private EglCore mEglCore;
@@ -517,11 +560,18 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         private float mPosX, mPosY;
         private int mRotate;
         private boolean mRotateUpdated;
+        private boolean mMirror;
 
-        public RenderThread(MainHandler mainHandler) {
+        private File mOutputFile;
+        private TextureMovieEncoder mVideoEncoder;
+        private boolean mRecordingEnabled;
+        private int mRecordingStatus;
+        private long mVideoMillis;
+
+        public RenderThread(MainHandler mainHandler, TextureMovieEncoder textureMovieEncoder) {
             super("Renderer Thread");
             mMainHandler = mainHandler;
-
+            mVideoEncoder = textureMovieEncoder;
             mSizeUpdated = false;
         }
 
@@ -547,6 +597,21 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             mEglCore.release();
 
             Logs.v(TAG, "Render Thread exit.");
+        }
+
+        /**
+         * Notifies the renderer that we want to stop or start recording.
+         */
+        public void changeRecordingState(boolean isRecording) {
+            Log.d(TAG, "changeRecordingState: was " + mRecordingEnabled + " now " + isRecording);
+            mRecordingEnabled = isRecording;
+        }
+
+        public void notifyStopRecord() {
+            if (mVideoEncoder != null && mVideoEncoder.isRecording()) {
+                mVideoEncoder.stopRecording();
+                mRecordingStatus = RECORDING_OFF;
+            }
         }
 
         /**
@@ -577,15 +642,22 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         }
 
         public void surfaceAvailable(SurfaceTexture surfaceTexture, boolean newSurface) {
+            mRecordingEnabled = mVideoEncoder.isRecording();
+            if (mRecordingEnabled) {
+                mRecordingStatus = RECORDING_RESUMED;
+            } else {
+                mRecordingStatus = RECORDING_OFF;
+            }
+
             mWindowSurface = new WindowSurface(mEglCore, surfaceTexture);
             mWindowSurface.makeCurrent();
 
             // Create and configure the SurfaceTexture, which will receive frames from the
             // camera.  We set the textured rect's program to render from it.
             mTexProgram = new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT);
-            int textureId = mTexProgram.createTextureObject();
-            mPreviewTexture = new SurfaceTexture(textureId);
-            mRect.setTexture(textureId);
+            mTextureId = mTexProgram.createTextureObject();
+            mPreviewTexture = new SurfaceTexture(mTextureId);
+            mRect.setTexture(mTextureId);
 
             if (!newSurface) {
                 mWindowSurfaceWidth = mWindowSurface.getWidth();
@@ -651,6 +723,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
             float zoomFactor = 1.0f - (mZoomPercent / 100.0f);
 
+            mRect.setMirror(mMirror);
             mRect.setScale(newWidth, newHeight);
             mRect.setPosition(mPosX, mPosY);
             mRect.setRotation(-mRotate);
@@ -669,6 +742,65 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
             mPreviewTexture.updateTexImage();
             GlUtil.checkGlError("draw start");
+
+            // If the recording state is changing, take care of it here.  Ideally we wouldn't
+            // be doing all this in onDrawFrame(), but the EGLContext sharing with GLSurfaceView
+            // makes it hard to do elsewhere.
+            if (mRecordingEnabled) {
+                switch (mRecordingStatus) {
+                    case RECORDING_OFF:
+                        Log.d(TAG, "START recording");
+                        // 开始录制前删除之前的视频文件
+                        String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
+                        mOutputFile = new File(ImageUtils.getVideoPath(), name);
+                        // start recording
+                        mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
+                                mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, EGL14.eglGetCurrentContext()));
+                        mRecordingStatus = RECORDING_ON;
+                        break;
+                    case RECORDING_RESUMED:
+                        Log.d(TAG, "RESUME recording");
+                        mVideoEncoder.updateSharedContext(EGL14.eglGetCurrentContext());
+                        mRecordingStatus = RECORDING_ON;
+                        break;
+                    case RECORDING_ON:
+                        // yay
+                        break;
+                    default:
+                        throw new RuntimeException("unknown status " + mRecordingStatus);
+                }
+            } else {
+                switch (mRecordingStatus) {
+                    case RECORDING_ON:
+                    case RECORDING_RESUMED:
+                        // stop recording
+                        Log.d(TAG, "STOP recording");
+                        mVideoEncoder.stopRecording();
+                        mRecordingStatus = RECORDING_OFF;
+                        break;
+                    case RECORDING_OFF:
+                        // yay
+                        break;
+                    default:
+                        throw new RuntimeException("unknown status " + mRecordingStatus);
+                }
+            }
+
+            //        if (mVideoEncoder.isRecording() && System.currentTimeMillis() - mVideoMillis > 50) {
+            if (mVideoEncoder.isRecording()) {
+                // Set the video encoder's texture name.  We only need to do this once, but in the
+                // current implementation it has to happen after the video encoder is started, so
+                // we just do it here.
+                //
+                // TODO: be less lame.
+                mVideoEncoder.setTextureId(mTextureId);
+
+                // Tell the video encoder thread that a new frame is available.
+                // This will be ignored if we're not actually recording.
+                mVideoEncoder.frameAvailable(mPreviewTexture);
+
+                mVideoMillis = System.currentTimeMillis();
+            }
 
             if (mSizeUpdated) {
                 mSizeUpdated = false;
@@ -693,9 +825,14 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             mSizeUpdated = true;
         }
 
-        public void setRotate(int rotation) {
+        public void setRotate(int rotation, int cameraId) {
             this.mRotate = rotation;
+            this.mMirror = (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT);
             mRotateUpdated = true;
+        }
+
+        public void setMirror(boolean mirror) {
+
         }
 
         /**
@@ -722,6 +859,12 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             GlUtil.checkGlError("releaseGl done");
 
             mEglCore.makeNothingCurrent();
+        }
+    }
+
+    public void setRecordListener(MediaRecordListener recordListener) {
+        if (mMovieEncoder != null) {
+            mMovieEncoder.setRecordListener(recordListener);
         }
     }
 }

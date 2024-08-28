@@ -2,6 +2,7 @@ package com.android.xz.camerademo.camera_activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.AsyncTask;
@@ -10,6 +11,7 @@ import android.widget.ImageView;
 
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.callback.PreviewBufferCallback;
+import com.android.xz.camerademo.MediaDisplayActivity;
 import com.android.xz.camerademo.R;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.view.CameraGLSurfaceHolderView;
@@ -30,6 +32,12 @@ public class GLSurfaceHolderCameraActivity extends AppCompatActivity {
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
         findViewById(R.id.switchCameraBtn).setOnClickListener(v -> mCameraManager.switchCamera());
         mPictureIv = findViewById(R.id.pictureIv);
+        mPictureIv.setOnClickListener(v -> {
+            String path = (String) v.getTag();
+            Intent intent = new Intent(this, MediaDisplayActivity.class);
+            intent.putExtra(MediaDisplayActivity.EXTRA_MEDIA_PATH, path);
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -64,15 +72,18 @@ public class GLSurfaceHolderCameraActivity extends AppCompatActivity {
 
     private class ImageSaveTask extends AsyncTask<byte[], Void, Bitmap> {
 
+        private String path;
+
         @Override
         protected Bitmap doInBackground(byte[]... bytes) {
-            ImageUtils.saveImage(bytes[0]);
+            path = ImageUtils.saveImage(bytes[0]);
             return ImageUtils.getLatestThumbBitmap();
         }
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             mPictureIv.setImageBitmap(bitmap);
+            mPictureIv.setTag(path);
         }
     }
 }

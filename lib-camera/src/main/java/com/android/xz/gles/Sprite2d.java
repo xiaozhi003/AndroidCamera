@@ -28,6 +28,7 @@ public class Sprite2d {
     private float mColor[];
     private int mTextureId;
     private float mAngle;
+    private boolean mMirror;
     private float mScaleX, mScaleY;
     private float mPosX, mPosY;
 
@@ -59,6 +60,14 @@ public class Sprite2d {
             Matrix.rotateM(modelView, 0, mAngle, 0.0f, 0.0f, 1.0f);
         }
         Matrix.scaleM(modelView, 0, mScaleX, mScaleY, 1.0f);
+
+        if (mMirror) {
+            // 左右镜像，Y轴镜像
+            Matrix.scaleM(modelView, 0, 1, -1, 1);
+            // 上下镜像，X轴镜像
+//            Matrix.scaleM(modelView, 0, -1, 1, 1);
+        }
+
         mMatrixReady = true;
     }
 
@@ -127,6 +136,11 @@ public class Sprite2d {
     public void setPosition(float posX, float posY) {
         mPosX = posX;
         mPosY = posY;
+        mMatrixReady = false;
+    }
+
+    public void setMirror(boolean mirror) {
+        mMirror = mirror;
         mMatrixReady = false;
     }
 

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,27 +5,48 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:orientation="vertical"
-    tools:context=".camera_activity.SurfaceCameraActivity">
+    tools:context=".mediacodec_activity.MediaCodecSurfaceActivity">
 
-    <com.android.xz.view.CameraSurfaceView
-        android:id="@+id/cameraView"
+    <FrameLayout
+        android:id="@+id/cameraLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <Button
+        <com.android.xz.view.CameraGLTextureView
+            android:id="@+id/cameraView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/timeTv"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/tv_timer_bg"
+            android:gravity="center"
+            android:paddingLeft="32dp"
+            android:paddingRight="32dp"
+            android:text="00:00:00"
+            android:textColor="@color/white"
+            android:textSize="14dp"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <com.android.xz.camerademo.view.CaptureButton
         android:id="@+id/captureBtn"
         android:layout_width="88dp"
         android:layout_height="88dp"
         android:layout_centerInParent="true"
-        android:background="@drawable/btn_capture_bg"
         android:elevation="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/cameraLayout" />
 
     <ImageView
         android:id="@+id/switchCameraBtn"
@@ -36,7 +56,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@id/captureBtn"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/cameraLayout" />
 
     <ImageView
         android:id="@+id/pictureIv"
@@ -46,6 +66,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toRightOf="@id/captureBtn"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/cameraLayout" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

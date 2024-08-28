@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
@@ -50,8 +51,6 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
 
     private TextureMovieEncoder mMovieEncoder;
 
-    private boolean mRecordingEnabled;      // controls button state
-
     public BaseGLSurfaceView(Context context) {
         super(context);
         init(context);
@@ -74,17 +73,13 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         mRenderer = new CameraSurfaceRenderer(mCameraHandler, mMovieEncoder);
         setRenderer(mRenderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-
-        mRecordingEnabled = mMovieEncoder.isRecording();
     }
 
     public void startRecord() {
-        mRecordingEnabled = true;
         queueEvent(() -> mRenderer.changeRecordingState(true));
     }
 
     public void stopRecord() {
-        mRecordingEnabled = false;
         if (mMovieEncoder.isRecording()) {
             queueEvent(() -> mRenderer.changeRecordingState(false));
         }
@@ -409,7 +404,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                         Log.d(TAG, "START recording");
                         // 开始录制前删除之前的视频文件
                         String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
-                        mOutputFile = new File(ImageUtils.getGalleryPath(), name);
+                        mOutputFile = new File(ImageUtils.getVideoPath(), name);
                         // start recording
                         mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
                                 mOutputFile, mIncomingHeight, mIncomingWidth, mIncomingWidth * mIncomingHeight * 10, EGL14.eglGetCurrentContext()));

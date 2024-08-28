@@ -21,6 +21,8 @@ import com.android.xz.camerademo.camera_activity.GLSurfaceHolderCameraActivity;
 import com.android.xz.camerademo.camera_activity.GLTextureCameraActivity;
 import com.android.xz.camerademo.camera_activity.SurfaceCameraActivity;
 import com.android.xz.camerademo.camera_activity.TextureCameraActivity;
+import com.android.xz.camerademo.mediacodec_activity.MediaCodecBufferActivity;
+import com.android.xz.camerademo.mediacodec_activity.MediaCodecSurfaceActivity;
 import com.android.xz.permission.IPermissionsResult;
 import com.android.xz.permission.PermissionUtils;
 import com.android.xz.util.ImageUtils;
@@ -46,6 +48,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.glTextureCamera2Btn).setOnClickListener(this);
         findViewById(R.id.glSurfaceHolderCameraBtn).setOnClickListener(this);
         findViewById(R.id.glSurfaceHolderCamera2Btn).setOnClickListener(this);
+        findViewById(R.id.mediaCodecBufferBtn).setOnClickListener(this);
+        findViewById(R.id.mediaCodecSurfaceBtn).setOnClickListener(this);
     }
 
     @Override
@@ -83,6 +87,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case R.id.glSurfaceHolderCamera2Btn:
                         startActivity(new Intent(mContext, GLSurfaceHolderCamera2Activity.class));
+                        break;
+                    case R.id.mediaCodecBufferBtn:
+                        startActivity(new Intent(mContext, MediaCodecBufferActivity.class));
+                        break;
+                    case R.id.mediaCodecSurfaceBtn:
+                        startActivity(new Intent(mContext, MediaCodecSurfaceActivity.class));
                         break;
                 }
             }

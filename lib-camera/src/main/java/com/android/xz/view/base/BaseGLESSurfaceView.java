@@ -3,6 +3,7 @@ package com.android.xz.view.base;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Handler;
@@ -259,7 +260,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
             if (handler != null) {
-                handler.sendRotate(mCameraManager.getOrientation());
+                handler.sendRotate(mCameraManager.getOrientation(), mCameraManager.getCameraId());
             }
         }
     }
@@ -421,8 +422,8 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
          * <p>
          * Call from UI thread.
          */
-        public void sendRotate(int rotation) {
-            sendMessage(obtainMessage(MSG_ROTATE_VALUE, rotation, 0));
+        public void sendRotate(int rotation, int cameraId) {
+            sendMessage(obtainMessage(MSG_ROTATE_VALUE, rotation, cameraId));
         }
 
         /**
@@ -465,7 +466,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
                     renderThread.setCameraPreviewSize(msg.arg1, msg.arg2);
                     break;
                 case MSG_ROTATE_VALUE:
-                    renderThread.setRotate(msg.arg1);
+                    renderThread.setRotate(msg.arg1, msg.arg2);
                     break;
                 default:
                     throw new RuntimeException("unknown message " + what);
@@ -508,6 +509,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
         private float mPosX, mPosY;
         private int mRotate;
         private boolean mRotateUpdated;
+        private boolean mMirror;
 
         public RenderThread(MainHandler mainHandler) {
             super("Renderer Thread");
@@ -642,6 +644,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
 
             float zoomFactor = 1.0f - (mZoomPercent / 100.0f);
 
+            mRect.setMirror(mMirror);
             mRect.setScale(newWidth, newHeight);
             mRect.setPosition(mPosX, mPosY);
             mRect.setRotation(-mRotate);
@@ -684,8 +687,9 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
             mSizeUpdated = true;
         }
 
-        public void setRotate(int rotation) {
+        public void setRotate(int rotation, int cameraId) {
             this.mRotate = rotation;
+            this.mMirror = (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT);
             mRotateUpdated = true;
         }
 
