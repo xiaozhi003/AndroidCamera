@@ -604,10 +604,14 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
         private void finishSurfaceSetup() {
             int width = mWindowSurfaceWidth;
             int height = mWindowSurfaceHeight;
+            if (width == 0) {
+                width = 1;
+            }
+            if (height == 0) {
+                height = 1;
+            }
             Log.d(TAG, "finishSurfaceSetup size=" + width + "x" + height +
                     " camera=" + mCameraPreviewWidth + "x" + mCameraPreviewHeight);
-
-            Log.d(TAG, "finishSurfaceSetup size=" + width + "x" + height);
 
             // Use full window.
             GLES20.glViewport(0, 0, width, height);

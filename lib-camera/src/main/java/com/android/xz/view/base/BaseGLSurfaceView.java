@@ -166,6 +166,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
     public void onPause() {
         super.onPause();
         closeCamera();
+        stopRecord();
     }
 
     public void onDestroy() {
