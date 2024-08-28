@@ -19,7 +19,7 @@ public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHold
 
     protected static final String TAG = BaseSurfaceView.class.getSimpleName();
     SurfaceHolder mSurfaceHolder;
-    private Context mContext;
+    protected Context mContext;
     private boolean hasSurface; // 是否存在摄像头显示层
     private ICameraManager mCameraManager;
     private int mRatioWidth = 0;

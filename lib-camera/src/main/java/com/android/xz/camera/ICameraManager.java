@@ -34,5 +34,5 @@ public interface ICameraManager {
     int getDisplayOrientation();
 
     void setCameraCallback(CameraCallback cameraCallback);
-    void setPreviewBufferCallback(PreviewBufferCallback previewBufferCallback);
+    void addPreviewBufferCallback(PreviewBufferCallback previewBufferCallback);
 }

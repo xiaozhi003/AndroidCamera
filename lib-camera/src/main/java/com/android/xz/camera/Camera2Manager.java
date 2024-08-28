@@ -92,7 +92,7 @@ public class Camera2Manager implements ICameraManager {
     private int mPreviewWidth = 1440;
     private int mPreviewHeight = 1080;
     private float mPreviewScale = mPreviewHeight * 1f / mPreviewWidth;
-    private PreviewBufferCallback mPreviewBufferCallback;
+    private List<PreviewBufferCallback> mPreviewBufferCallbacks = new ArrayList<>();
     /**
      * 拍照大小
      */
@@ -147,8 +147,10 @@ public class Camera2Manager implements ICameraManager {
     }
 
     @Override
-    public void setPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
-        mPreviewBufferCallback = previewBufferCallback;
+    public void addPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
+        if (previewBufferCallback != null) {
+            mPreviewBufferCallbacks.add(previewBufferCallback);
+        }
     }
 
     @Override
@@ -347,7 +349,7 @@ public class Camera2Manager implements ICameraManager {
         }
 
         // preview output
-        if (mPreviewBufferCallback != null) {
+        if (!mPreviewBufferCallbacks.isEmpty()) {
             mPreviewImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(), ImageFormat.YUV_420_888, 2);
             mPreviewImageReader.setOnImageAvailableListener(new OnImageAvailableListenerImpl(), mBackgroundHandler);
             outputs.add(mPreviewImageReader.getSurface());
@@ -886,9 +888,10 @@ public class Camera2Manager implements ICameraManager {
                         }
                     }
                 }
-
-                if (mPreviewBufferCallback != null) {
-                    mPreviewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight());
+                if (!mPreviewBufferCallbacks.isEmpty()) {
+                    for (PreviewBufferCallback previewBufferCallback: mPreviewBufferCallbacks) {
+                        previewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight());
+                    }
                 }
                 lock.unlock();
             }

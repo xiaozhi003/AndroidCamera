@@ -23,33 +23,25 @@
 
 package com.android.xz.encoder;
 
-import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.android.xz.util.FileUtils;
 import com.android.xz.util.Logs;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
-import java.util.Locale;
 
 public class MediaMuxerWrapper {
     private static final boolean DEBUG = Logs.issIsLogEnabled();  // TODO set false on release
-    private static final String TAG = "MediaMuxerWrapper";
-
-    private static final String DIR_NAME = "video";
-    private static final SimpleDateFormat mDateTimeFormat = new SimpleDateFormat("yyyyMMdd_HHmmss.SSS", Locale.US);
+    private static final String TAG = MediaMuxerWrapper.class.getSimpleName();
 
     private String mOutputPath;
     private final MediaMuxer mMediaMuxer;  // API >= 18
-    private int mEncoderCount, mStatredCount;
+    private int mEncoderCount, mStartedCount;
     private boolean mIsStarted;
     private MediaEncoder mVideoEncoder, mAudioEncoder;
 
@@ -59,16 +51,15 @@ public class MediaMuxerWrapper {
      * @param ext extension of output file
      * @throws IOException
      */
-    public MediaMuxerWrapper(String ext, Context context) throws IOException {
+    public MediaMuxerWrapper(String ext, File outputFile) throws IOException {
         if (TextUtils.isEmpty(ext)) ext = ".mp4";
         try {
-            mOutputPath = getCaptureFile(FileUtils.getAppPath(context, "Camera") + File.separator, ext).toString();
+            mOutputPath = outputFile.toString();
         } catch (final NullPointerException e) {
             throw new RuntimeException("This app has no permission of writing external storage");
         }
         mMediaMuxer = new MediaMuxer(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-//        mMediaMuxer.setOrientationHint(mOrientationHint);
-        mEncoderCount = mStatredCount = 0;
+        mEncoderCount = mStartedCount = 0;
         mIsStarted = false;
     }
 
@@ -147,8 +138,8 @@ public class MediaMuxerWrapper {
     /*package*/
     synchronized boolean start() {
         if (DEBUG) Log.v(TAG, "start:");
-        mStatredCount++;
-        if ((mEncoderCount > 0) && (mStatredCount == mEncoderCount)) {
+        mStartedCount++;
+        if ((mEncoderCount > 0) && (mStartedCount == mEncoderCount)) {
             mMediaMuxer.start();
             mIsStarted = true;
             notifyAll();
@@ -162,9 +153,9 @@ public class MediaMuxerWrapper {
      */
     /*package*/
     synchronized void stop() {
-        if (DEBUG) Log.v(TAG, "stop:mStatredCount=" + mStatredCount);
-        mStatredCount--;
-        if ((mEncoderCount > 0) && (mStatredCount <= 0)) {
+        if (DEBUG) Log.v(TAG, "stop:mStatredCount=" + mStartedCount);
+        mStartedCount--;
+        if ((mEncoderCount > 0) && (mStartedCount <= 0)) {
             try {
                 mMediaMuxer.stop();
             } catch (final Exception e) {
@@ -200,45 +191,7 @@ public class MediaMuxerWrapper {
      */
     /*package*/
     synchronized void writeSampleData(final int trackIndex, final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
-        if (mStatredCount > 0)
+        if (mStartedCount > 0)
             mMediaMuxer.writeSampleData(trackIndex, byteBuf, bufferInfo);
     }
-
-//**********************************************************************
-//**********************************************************************
-
-    /**
-     * generate output file
-     *
-     * @param type Environment.DIRECTORY_MOVIES / Environment.DIRECTORY_DCIM etc.
-     * @param ext  .mp4(.m4a for audio) or .png
-     * @return return null when this app has no writing permission to external storage.
-     */
-    public static final File getCaptureFile(final String type, final String ext) {
-        final File dir = new File(type, DIR_NAME);
-        dir.mkdirs();
-
-        File[] listFiles = dir.listFiles();
-        if (listFiles != null && listFiles.length > 5) {
-            for (File file : listFiles) {
-                file.delete();
-            }
-        }
-        if (dir.canWrite()) {
-            return new File(dir, getDateTimeString() + ext);
-//      return new File(dir, "face_live_video" + ext);
-        }
-        return null;
-    }
-
-    /**
-     * get current date and time as String
-     *
-     * @return
-     */
-    private static final String getDateTimeString() {
-        final GregorianCalendar now = new GregorianCalendar();
-        return mDateTimeFormat.format(now.getTime());
-    }
-
 }

@@ -15,12 +15,11 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <com.android.xz.camerademo.view.CaptureButton
         android:id="@+id/captureBtn"
         android:layout_width="88dp"
         android:layout_height="88dp"
         android:layout_centerInParent="true"
-        android:background="@drawable/btn_capture_bg"
         android:elevation="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

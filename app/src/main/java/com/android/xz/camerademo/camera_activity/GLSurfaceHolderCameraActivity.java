@@ -27,7 +27,6 @@ public class GLSurfaceHolderCameraActivity extends AppCompatActivity {
 
         mCameraGLSurfaceHolderView = findViewById(R.id.cameraView);
         mCameraManager = (CameraManager) mCameraGLSurfaceHolderView.getCameraManager();
-        mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
         findViewById(R.id.switchCameraBtn).setOnClickListener(v -> mCameraManager.switchCamera());
         mPictureIv = findViewById(R.id.pictureIv);
@@ -76,11 +75,4 @@ public class GLSurfaceHolderCameraActivity extends AppCompatActivity {
             mPictureIv.setImageBitmap(bitmap);
         }
     }
-
-    private PreviewBufferCallback mPreviewBufferCallback = new PreviewBufferCallback() {
-        @Override
-        public void onPreviewBufferFrame(byte[] data, int width, int height) {
-//            Logs.i(TAG, "onPreviewBufferFrame...");
-        }
-    };
 }

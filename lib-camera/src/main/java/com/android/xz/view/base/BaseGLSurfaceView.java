@@ -2,20 +2,27 @@ package com.android.xz.view.base;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.opengl.EGL14;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.encoder.MediaRecordListener;
+import com.android.xz.encoder.TextureMovieEncoder;
 import com.android.xz.gles.FullFrameRect;
 import com.android.xz.gles.Texture2dProgram;
+import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.Date;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -41,6 +48,10 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
     private int mPreviewHeight;
     private CameraSurfaceRenderer mRenderer;
 
+    private TextureMovieEncoder mMovieEncoder;
+
+    private boolean mRecordingEnabled;      // controls button state
+
     public BaseGLSurfaceView(Context context) {
         super(context);
         init(context);
@@ -59,9 +70,24 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         mCameraManager.setCameraCallback(this);
 
         setEGLContextClientVersion(2);
-        mRenderer = new CameraSurfaceRenderer(mCameraHandler);
+        mMovieEncoder = new TextureMovieEncoder(context);
+        mRenderer = new CameraSurfaceRenderer(mCameraHandler, mMovieEncoder);
         setRenderer(mRenderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+
+        mRecordingEnabled = mMovieEncoder.isRecording();
+    }
+
+    public void startRecord() {
+        mRecordingEnabled = true;
+        queueEvent(() -> mRenderer.changeRecordingState(true));
+    }
+
+    public void stopRecord() {
+        mRecordingEnabled = false;
+        if (mMovieEncoder.isRecording()) {
+            queueEvent(() -> mRenderer.changeRecordingState(false));
+        }
     }
 
     public abstract ICameraManager createCameraManager(Context context);
@@ -166,6 +192,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
     }
 
     private void closeCamera() {
+        queueEvent(() -> mRenderer.notifyStopRecord());
         mCameraManager.releaseCamera();
         queueEvent(() -> mRenderer.notifyPausing());
         mSurfaceTexture = null;
@@ -263,7 +290,11 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
      * Do not call any methods here directly from another thread -- use the
      * GLSurfaceView#queueEvent() call.
      */
-    static class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
+    static class CameraSurfaceRenderer implements Renderer {
+
+        private static final int RECORDING_OFF = 0;
+        private static final int RECORDING_ON = 1;
+        private static final int RECORDING_RESUMED = 2;
 
         private CameraHandler mCameraHandler;
 
@@ -276,13 +307,38 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         private int mTextureId;
         private SurfaceTexture mSurfaceTexture;
 
-        public CameraSurfaceRenderer(CameraHandler cameraHandler) {
+
+        private File mOutputFile;
+        private TextureMovieEncoder mVideoEncoder;
+        private boolean mRecordingEnabled;
+        private int mRecordingStatus;
+        private long mVideoMillis;
+
+        public CameraSurfaceRenderer(CameraHandler cameraHandler, TextureMovieEncoder textureMovieEncoder) {
             mCameraHandler = cameraHandler;
+            mVideoEncoder = textureMovieEncoder;
 
             mTextureId = -1;
 
+            mRecordingStatus = -1;
+            mRecordingEnabled = false;
             mIncomingSizeUpdated = false;
             mIncomingWidth = mIncomingHeight = -1;
+        }
+
+        /**
+         * Notifies the renderer that we want to stop or start recording.
+         */
+        public void changeRecordingState(boolean isRecording) {
+            Log.d(TAG, "changeRecordingState: was " + mRecordingEnabled + " now " + isRecording);
+            mRecordingEnabled = isRecording;
+        }
+
+        public void notifyStopRecord() {
+            if (mVideoEncoder != null && mVideoEncoder.isRecording()) {
+                mVideoEncoder.stopRecording();
+                mRecordingStatus = RECORDING_OFF;
+            }
         }
 
         /**
@@ -306,6 +362,16 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         @Override
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             Logs.i(TAG, "onSurfaceCreated. " + Thread.currentThread().getName());
+            // We're starting up or coming back.  Either way we've got a new EGLContext that will
+            // need to be shared with the video encoder, so figure out if a recording is already
+            // in progress.
+            mRecordingEnabled = mVideoEncoder.isRecording();
+            if (mRecordingEnabled) {
+                mRecordingStatus = RECORDING_RESUMED;
+            } else {
+                mRecordingStatus = RECORDING_OFF;
+            }
+
             // Set up the texture blitter that will be used for on-screen display.  This
             // is *not* applied to the recording, because that uses a separate shader.
             mFullScreen = new FullFrameRect(
@@ -333,6 +399,65 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
 
             mSurfaceTexture.updateTexImage();
 
+            // If the recording state is changing, take care of it here.  Ideally we wouldn't
+            // be doing all this in onDrawFrame(), but the EGLContext sharing with GLSurfaceView
+            // makes it hard to do elsewhere.
+            if (mRecordingEnabled) {
+                switch (mRecordingStatus) {
+                    case RECORDING_OFF:
+                        Log.d(TAG, "START recording");
+                        // 开始录制前删除之前的视频文件
+                        String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
+                        mOutputFile = new File(ImageUtils.getGalleryPath(), name);
+                        // start recording
+                        mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
+                                mOutputFile, mIncomingHeight, mIncomingWidth, mIncomingWidth * mIncomingHeight * 10, EGL14.eglGetCurrentContext()));
+                        mRecordingStatus = RECORDING_ON;
+                        break;
+                    case RECORDING_RESUMED:
+                        Log.d(TAG, "RESUME recording");
+                        mVideoEncoder.updateSharedContext(EGL14.eglGetCurrentContext());
+                        mRecordingStatus = RECORDING_ON;
+                        break;
+                    case RECORDING_ON:
+                        // yay
+                        break;
+                    default:
+                        throw new RuntimeException("unknown status " + mRecordingStatus);
+                }
+            } else {
+                switch (mRecordingStatus) {
+                    case RECORDING_ON:
+                    case RECORDING_RESUMED:
+                        // stop recording
+                        Log.d(TAG, "STOP recording");
+                        mVideoEncoder.stopRecording();
+                        mRecordingStatus = RECORDING_OFF;
+                        break;
+                    case RECORDING_OFF:
+                        // yay
+                        break;
+                    default:
+                        throw new RuntimeException("unknown status " + mRecordingStatus);
+                }
+            }
+
+            //        if (mVideoEncoder.isRecording() && System.currentTimeMillis() - mVideoMillis > 50) {
+            if (mVideoEncoder.isRecording()) {
+                // Set the video encoder's texture name.  We only need to do this once, but in the
+                // current implementation it has to happen after the video encoder is started, so
+                // we just do it here.
+                //
+                // TODO: be less lame.
+                mVideoEncoder.setTextureId(mTextureId);
+
+                // Tell the video encoder thread that a new frame is available.
+                // This will be ignored if we're not actually recording.
+                mVideoEncoder.frameAvailable(mSurfaceTexture);
+
+                mVideoMillis = System.currentTimeMillis();
+            }
+
             if (mIncomingWidth <= 0 || mIncomingHeight <= 0) {
                 return;
             }
@@ -349,6 +474,12 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
             mIncomingWidth = width;
             mIncomingHeight = height;
             mIncomingSizeUpdated = true;
+        }
+    }
+
+    public void setRecordListener(MediaRecordListener recordListener) {
+        if (mMovieEncoder != null) {
+            mMovieEncoder.setRecordListener(recordListener);
         }
     }
 }

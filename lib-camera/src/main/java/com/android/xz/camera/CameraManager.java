@@ -70,12 +70,15 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     private byte[] mCameraBytes = null;
     private boolean isSupportZoom;
     private CameraCallback mCameraCallback;
-    private PreviewBufferCallback mPreviewBufferCallback;
+    private List<PreviewBufferCallback> mPreviewBufferCallbacks = new ArrayList<>();
+
     private PreviewCallback mPreviewCallback = new PreviewCallback() {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
-            if (mPreviewBufferCallback != null) {
-                mPreviewBufferCallback.onPreviewBufferFrame(data, mPreviewWidth, mPreviewHeight);
+            if (!mPreviewBufferCallbacks.isEmpty()) {
+                for (PreviewBufferCallback previewBufferCallback : mPreviewBufferCallbacks) {
+                    previewBufferCallback.onPreviewBufferFrame(data, mPreviewWidth, mPreviewHeight);
+                }
             }
             mCameraBytes = data;
             camera.addCallbackBuffer(data);
@@ -176,8 +179,10 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     }
 
     @Override
-    public void setPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
-        mPreviewBufferCallback = previewBufferCallback;
+    public void addPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
+        if (previewBufferCallback != null) {
+            mPreviewBufferCallbacks.add(previewBufferCallback);
+        }
     }
 
     @Override
@@ -247,7 +252,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         if (mCamera != null) {
             try {
                 mCamera.setPreviewDisplay(holder);
-                if (mPreviewBufferCallback != null) {
+                if (!mPreviewBufferCallbacks.isEmpty()) {
                     mCamera.addCallbackBuffer(new byte[mPreviewWidth * mPreviewHeight * 3 / 2]);
                     mCamera.setPreviewCallbackWithBuffer(mPreviewCallback);
                 }
@@ -273,7 +278,10 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         if (mCamera != null) {
             try {
                 mCamera.setPreviewTexture(surface);
-                mCamera.setPreviewCallback(mPreviewCallback);
+                if (!mPreviewBufferCallbacks.isEmpty()) {
+                    mCamera.addCallbackBuffer(new byte[mPreviewWidth * mPreviewHeight * 3 / 2]);
+                    mCamera.setPreviewCallbackWithBuffer(mPreviewCallback);
+                }
                 mCamera.startPreview();
                 onPreview(mPreviewWidth, mPreviewHeight);
             } catch (Exception e) {
@@ -292,6 +300,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
             try {
                 mCamera.setPreviewCallback(null);
                 mCamera.stopPreview();
+                mPreviewBufferCallbacks.clear();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -424,7 +433,14 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     public void switchCamera() {
         // 先改变摄像头方向
         mCameraId ^= 1;
+        List<PreviewBufferCallback> previewBufferCallbacks = new ArrayList<>();
+        if (!mPreviewBufferCallbacks.isEmpty()) {
+            previewBufferCallbacks.addAll(mPreviewBufferCallbacks);
+        }
         releaseCamera();
+        if (!previewBufferCallbacks.isEmpty()) {
+            mPreviewBufferCallbacks.addAll(previewBufferCallbacks);
+        }
         openCamera();
     }
 

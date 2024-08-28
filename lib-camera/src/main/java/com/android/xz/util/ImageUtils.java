@@ -42,10 +42,14 @@ public class ImageUtils {
 
     private static String GALLERY_PATH = "";
 
+    public static String getGalleryPath() {
+        return GALLERY_PATH;
+    }
+
     private static final String[] STORE_IMAGES = {
             MediaStore.Images.Thumbnails._ID,
     };
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss");
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss");
 
     public static Bitmap rotateBitmap(Bitmap source, int degree, boolean flipHorizontal, boolean recycle) {
         if (degree == 0 && !flipHorizontal) {
@@ -66,16 +70,16 @@ public class ImageUtils {
         return rotateBitmap;
     }
 
-    public static void saveImage(byte[] jpeg) {
+    public static String saveImage(byte[] jpeg) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
-            saveImageToDCIM(jpeg);
+            return saveImageToDCIM(jpeg);
         } else {
-            saveImageNone(jpeg);
+            return saveImageNone(jpeg);
         }
     }
 
-    private static void saveImageToDCIM(byte[] jpeg) {
-        String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
+    private static String saveImageToDCIM(byte[] jpeg) {
+        String fileName = "IMG_" + DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
         Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
 
@@ -122,10 +126,11 @@ public class ImageUtils {
                 e.printStackTrace();
             }
         }
+        return outFile.getAbsolutePath();
     }
 
-    private static void saveImageNone(byte[] jpeg) {
-        String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
+    private static String saveImageNone(byte[] jpeg) {
+        String fileName = "IMG_" + DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
         Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
 
@@ -133,6 +138,7 @@ public class ImageUtils {
         if (ok) {
             insertToDB(outFile.getAbsolutePath());
         }
+        return outFile.getAbsolutePath();
     }
 
     public static void saveBitmap(Bitmap bitmap) {
@@ -144,7 +150,7 @@ public class ImageUtils {
     }
 
     private static void saveBitmapToDCIM(Bitmap bitmap) {
-        String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
+        String fileName = "IMG_" + DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
         Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
 
@@ -196,7 +202,7 @@ public class ImageUtils {
     }
 
     private static void saveBitmapNone(Bitmap bitmap) {
-        String fileName = DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
+        String fileName = "IMG_" + DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
         Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
         FileOutputStream os = null;
@@ -252,14 +258,20 @@ public class ImageUtils {
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
 
-        // 计算缩放比例
-        options.inSampleSize = calculateInSampleSize(options, requestSize.getWidth(), requestSize.getHeight());
+        Matrix matrix = new Matrix();
+        int rotate = getJPEGMatrix(bytes, matrix);
+        if (Math.abs(rotate) == 90) {
+            // 计算缩放比例
+            options.inSampleSize = calculateInSampleSize(options, requestSize.getHeight(), requestSize.getWidth());
+        } else {
+            // 计算缩放比例
+            options.inSampleSize = calculateInSampleSize(options, requestSize.getWidth(), requestSize.getHeight());
+        }
 
         // 使用新的缩放比例在此解码图片
         options.inJustDecodeBounds = false;
         Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
 
-        Matrix matrix = getJPEGMatrix(bytes);
         if (!matrix.isIdentity()) {
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         }
@@ -273,14 +285,20 @@ public class ImageUtils {
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(filePath, options);
 
-        // 计算缩放比例
-        options.inSampleSize = calculateInSampleSize(options, requestSize.getWidth(), requestSize.getHeight());
+        Matrix matrix = new Matrix();
+        int rotate = getJPEGMatrix(filePath, matrix);
+        if (Math.abs(rotate) == 90) {
+            // 计算缩放比例
+            options.inSampleSize = calculateInSampleSize(options, requestSize.getHeight(), requestSize.getWidth());
+        } else {
+            // 计算缩放比例
+            options.inSampleSize = calculateInSampleSize(options, requestSize.getWidth(), requestSize.getHeight());
+        }
 
         // 使用新的缩放比例在此解码图片
         options.inJustDecodeBounds = false;
         Bitmap bitmap = BitmapFactory.decodeFile(filePath, options);
 
-        Matrix matrix = getJPEGMatrix(filePath);
         if (!matrix.isIdentity()) {
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         }
@@ -288,8 +306,8 @@ public class ImageUtils {
         return bitmap;
     }
 
-    public static Matrix getJPEGMatrix(byte[] bytes) {
-        Matrix matrix = new Matrix();
+    public static int getJPEGMatrix(byte[] bytes, Matrix matrix) {
+        int rotate = 0;
         try {
             InputStream inputStream = new ByteArrayInputStream(bytes);
             ExifInterface exifInterface = new ExifInterface(inputStream);
@@ -309,16 +327,20 @@ public class ImageUtils {
                 case ExifInterface.ORIENTATION_TRANSPOSE:
                     matrix.setRotate(90);
                     matrix.postScale(-1, 1);
+                    rotate = 90;
                     break;
                 case ExifInterface.ORIENTATION_ROTATE_90:
                     matrix.setRotate(90);
+                    rotate = 90;
                     break;
                 case ExifInterface.ORIENTATION_TRANSVERSE:
                     matrix.setRotate(-90);
                     matrix.postScale(-1, 1);
+                    rotate = -90;
                     break;
                 case ExifInterface.ORIENTATION_ROTATE_270:
                     matrix.setRotate(-90);
+                    rotate = -90;
                     break;
                 default:
                     // 无需调整
@@ -327,11 +349,11 @@ public class ImageUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return matrix;
+        return rotate;
     }
 
-    public static Matrix getJPEGMatrix(String filePath) {
-        Matrix matrix = new Matrix();
+    public static int getJPEGMatrix(String filePath, Matrix matrix) {
+        int rotate = 0;
         try {
             ExifInterface exifInterface = new ExifInterface(filePath);
             int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
@@ -350,16 +372,20 @@ public class ImageUtils {
                 case ExifInterface.ORIENTATION_TRANSPOSE:
                     matrix.setRotate(90);
                     matrix.postScale(-1, 1);
+                    rotate = 90;
                     break;
                 case ExifInterface.ORIENTATION_ROTATE_90:
                     matrix.setRotate(90);
+                    rotate = 90;
                     break;
                 case ExifInterface.ORIENTATION_TRANSVERSE:
                     matrix.setRotate(-90);
                     matrix.postScale(-1, 1);
+                    rotate = -90;
                     break;
                 case ExifInterface.ORIENTATION_ROTATE_270:
                     matrix.setRotate(-90);
+                    rotate = -90;
                     break;
                 default:
                     // 无需调整
@@ -368,12 +394,12 @@ public class ImageUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return matrix;
+        return rotate;
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        final int height = options.outHeight;
         final int width = options.outWidth;
+        final int height = options.outHeight;
         int inSampleSize = 1;
 
         if (height > reqHeight || width > reqWidth) {

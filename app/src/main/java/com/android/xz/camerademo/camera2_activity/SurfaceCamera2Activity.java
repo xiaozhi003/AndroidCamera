@@ -30,7 +30,6 @@ public class SurfaceCamera2Activity extends AppCompatActivity {
 
         mCameraSurfaceView = findViewById(R.id.cameraView);
         mCameraManager = (Camera2Manager) mCameraSurfaceView.getCameraManager();
-//        mCameraManager.setPreviewBufferCallback(mPreviewBufferCallback);
         findViewById(R.id.captureBtn).setOnClickListener(v -> capture());
         findViewById(R.id.switchCameraBtn).setOnClickListener(v -> mCameraManager.switchCamera());
         mPictureIv = findViewById(R.id.pictureIv);
@@ -69,11 +68,4 @@ public class SurfaceCamera2Activity extends AppCompatActivity {
             mPictureIv.setImageBitmap(bitmap);
         }
     }
-
-    private PreviewBufferCallback mPreviewBufferCallback = new PreviewBufferCallback() {
-        @Override
-        public void onPreviewBufferFrame(byte[] data, int width, int height) {
-//            Logs.i(TAG, "onPreviewBufferFrame...");
-        }
-    };
 }
