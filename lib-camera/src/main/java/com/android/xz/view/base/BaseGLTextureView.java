@@ -154,7 +154,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
         if (0 == mRatioWidth || 0 == mRatioHeight) {
-            setMeasuredDimension(width, height);
+            setMeasuredDimension(width, width * 4 / 3);
         } else {
             if (width < height * mRatioWidth / mRatioHeight) {
                 setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
@@ -184,12 +184,13 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
-        Logs.i(TAG, "onSurfaceTextureAvailable.");
+        Logs.i(TAG, "onSurfaceTextureAvailable " + width + "x" + height);
         mSurfaceTexture = surfaceTexture;
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
             if (handler != null) {
                 handler.sendSurfaceAvailable(mSurfaceTexture, true);
+                handler.sendSurfaceChanged(0, width, height);
             }
         }
     }

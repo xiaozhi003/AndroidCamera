@@ -96,7 +96,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
         if (0 == mRatioWidth || 0 == mRatioHeight) {
-            setMeasuredDimension(width, height);
+            setMeasuredDimension(width, width * 4 / 3);
         } else {
             if (width < height * mRatioWidth / mRatioHeight) {
                 setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
