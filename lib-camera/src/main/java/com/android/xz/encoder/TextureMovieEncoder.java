@@ -356,7 +356,7 @@ public class TextureMovieEncoder implements Runnable {
         mInputWindowSurface.setPresentationTime(timestampNanos);
 
         mInputWindowSurface.swapBuffers();
-        Log.i(TAG, "swapBuffers: " + (System.currentTimeMillis() - start) + "ms");
+//        Log.i(TAG, "swapBuffers: " + (System.currentTimeMillis() - start) + "ms");
     }
 
     /**
