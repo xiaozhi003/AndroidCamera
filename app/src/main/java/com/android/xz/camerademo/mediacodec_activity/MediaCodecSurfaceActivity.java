@@ -28,7 +28,7 @@ import java.util.TimerTask;
 public class MediaCodecSurfaceActivity extends AppCompatActivity {
 
     private static final String TAG = MediaCodecSurfaceActivity.class.getSimpleName();
-    private CameraGLTextureView mCameraGLSurfaceView;
+    private CameraGLSurfaceView mCameraGLSurfaceView;
     private CameraManager mCameraManager;
     private ImageView mPictureIv;
     private CaptureButton mCaptureBtn;
