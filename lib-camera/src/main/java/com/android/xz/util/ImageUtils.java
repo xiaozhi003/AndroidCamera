@@ -18,8 +18,10 @@ import android.util.Size;
 
 import androidx.exifinterface.media.ExifInterface;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,7 +94,6 @@ public class ImageUtils {
     private static String saveImageToDCIM(byte[] jpeg) {
         String fileName = "IMG_" + DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".jpg";
         File outFile = new File(GALLERY_PATH, fileName);
-        Logs.d(TAG, "saveImage. filepath: " + outFile.getAbsolutePath());
 
         // 新建文件夹
         FileUtils.makeDirs(outFile.getAbsolutePath());
@@ -137,7 +138,10 @@ public class ImageUtils {
                 e.printStackTrace();
             }
         }
-        return outFile.getAbsolutePath();
+        String realImagePath = filePathByUri(sContext, uri);
+        Logs.d(TAG, "saveImage. filepath: " + realImagePath);
+
+        return realImagePath;
     }
 
     private static String saveImageNone(byte[] jpeg) {
@@ -480,4 +484,34 @@ public class ImageUtils {
         return videoUri;
     }
 
+    /**
+     * 通过uri 获取文件真实路径 (AndroidQ以下版本)
+     *
+     * @param context
+     * @param uri
+     * @return
+     */
+    public static String filePathByUri(Context context, Uri uri) {
+        String imagePath = null;
+        if (context != null && uri != null) {
+            String[] proj = {MediaStore.Images.Media.DATA};
+            Cursor cursor = context.getContentResolver().query(uri, proj, null, null, null);
+            if (cursor.moveToFirst()) {
+                int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                imagePath = cursor.getString(column_index);
+            }
+            cursor.close();
+        }
+        return imagePath;
+    }
+
+    private Bitmap getBitmapFromUri(Uri uri) {
+        try {
+            InputStream inputStream = sContext.getContentResolver().openInputStream(uri);
+            return BitmapFactory.decodeStream(inputStream);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

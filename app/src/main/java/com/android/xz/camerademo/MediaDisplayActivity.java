@@ -3,6 +3,7 @@ package com.android.xz.camerademo;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,6 +18,8 @@ import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public class MediaDisplayActivity extends AppCompatActivity {
 
