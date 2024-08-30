@@ -16,6 +16,7 @@ import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.camera.callback.PictureBufferCallback;
 import com.android.xz.camera.callback.PreviewBufferCallback;
 import com.android.xz.util.Logs;
 
@@ -71,6 +72,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     private boolean isSupportZoom;
     private CameraCallback mCameraCallback;
     private List<PreviewBufferCallback> mPreviewBufferCallbacks = new ArrayList<>();
+    private PictureBufferCallback mPictureBufferCallback;
 
     private PreviewCallback mPreviewCallback = new PreviewCallback() {
         @Override
@@ -82,6 +84,15 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
             }
             mCameraBytes = data;
             camera.addCallbackBuffer(data);
+        }
+    };
+    private PictureCallback mPictureCallback = new PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            camera.startPreview();
+            if (mPictureBufferCallback != null) {
+                mPictureBufferCallback.onPictureToken(data);
+            }
         }
     };
     private Camera.ErrorCallback errorCallback = (error, camera) -> {
@@ -190,8 +201,10 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         mCameraCallback = cameraCallback;
     }
 
-    public void takePicture(PictureCallback pictureCallback) {
-        takePicture(null, null, pictureCallback);
+    @Override
+    public void takePicture(PictureBufferCallback pictureBufferCallback) {
+        mPictureBufferCallback = pictureBufferCallback;
+        takePicture(null, null, mPictureCallback);
     }
 
     public void takePicture(ShutterCallback shutterCallback, PictureCallback rawCallback, PictureCallback jpegCallback) {

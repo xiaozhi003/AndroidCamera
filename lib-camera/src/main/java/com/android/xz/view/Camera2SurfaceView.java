@@ -39,6 +39,7 @@ public class Camera2SurfaceView extends BaseSurfaceView {
             ratio = width * 1.0f / height;
         }
         if (ratio == mPreviewSize.getHeight() * 1f / mPreviewSize.getWidth()) {
+            Logs.i(TAG, "startPreview1");
             getCameraManager().startPreview(holder);
         }
     }
@@ -48,13 +49,9 @@ public class Camera2SurfaceView extends BaseSurfaceView {
         Logs.v(TAG, "onOpen.");
         mPreviewSize = getCameraManager().getPreviewSize();
         getSurfaceHolder().setFixedSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-        float ratio;
-        if (mSurfaceWidth > mSurfaceHeight) {
-            ratio = mSurfaceHeight * 1.0f / mSurfaceWidth;
-        } else {
-            ratio = mSurfaceWidth * 1.0f / mSurfaceHeight;
-        }
+        float ratio = mSurfaceHeight * 1.0f / mSurfaceWidth;
         if (ratio == mPreviewSize.getHeight() * 1f / mPreviewSize.getWidth()) {
+            Logs.i(TAG, "startPreview2");
             getCameraManager().startPreview(getSurfaceHolder());
         }
     }

@@ -14,7 +14,7 @@ import com.android.xz.util.Logs;
  * 摄像头预览TextureView
  * Created by wangzhi on 2024/8/22.
  */
-public abstract class BaseTextureView extends TextureView implements TextureView.SurfaceTextureListener, CameraCallback {
+public abstract class BaseTextureView extends TextureView implements TextureView.SurfaceTextureListener, CameraCallback, BaseCameraView {
     private static final String TAG = BaseTextureView.class.getSimpleName();
 
     private Context mContext;
@@ -154,6 +154,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     /**
      * 打开摄像头并预览
      */
+    @Override
     public void onResume() {
         if (hasSurface) {
             // 当activity暂停，但是并未停止的时候，surface仍然存在，所以 surfaceCreated()
@@ -165,8 +166,13 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     /**
      * 停止预览并关闭摄像头
      */
+    @Override
     public void onPause() {
         closeCamera();
+    }
+
+    @Override
+    public void onDestroy() {
     }
 
     /**

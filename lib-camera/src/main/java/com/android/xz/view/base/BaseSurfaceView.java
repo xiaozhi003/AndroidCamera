@@ -15,7 +15,7 @@ import com.android.xz.util.Logs;
  * 摄像头预览SurfaceView
  * Created by wangzhi on 2024/8/22.
  */
-public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHolder.Callback, CameraCallback {
+public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHolder.Callback, CameraCallback, BaseCameraView {
 
     protected static final String TAG = BaseSurfaceView.class.getSimpleName();
     private SurfaceHolder mSurfaceHolder;
@@ -82,6 +82,7 @@ public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHold
         return mSurfaceHolder;
     }
 
+    @Override
     public void onResume() {
         if (hasSurface) {
             // 当activity暂停，但是并未停止的时候，surface仍然存在，所以 surfaceCreated()
@@ -90,8 +91,13 @@ public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHold
         }
     }
 
+    @Override
     public void onPause() {
         closeCamera();
+    }
+
+    @Override
+    public void onDestroy() {
     }
 
     /**

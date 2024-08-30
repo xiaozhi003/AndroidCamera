@@ -11,7 +11,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Surface;
 import android.view.TextureView;
 
 import androidx.annotation.NonNull;
@@ -35,7 +34,7 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.Date;
 
-public abstract class BaseGLTextureView extends TextureView implements TextureView.SurfaceTextureListener, SurfaceTexture.OnFrameAvailableListener, CameraCallback {
+public abstract class BaseGLTextureView extends TextureView implements TextureView.SurfaceTextureListener, SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
     private static final String TAG = BaseGLTextureView.class.getSimpleName();
 
     private static final int DEFAULT_ZOOM_PERCENT = 0;      // 0-100
@@ -249,6 +248,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     /**
      * 打开摄像头并预览
      */
+    @Override
     public void onResume() {
         if (hasSurface) {
             // 当activity暂停，但是并未停止的时候，surface仍然存在，所以 surfaceCreated()
@@ -260,10 +260,12 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     /**
      * 停止预览并关闭摄像头
      */
+    @Override
     public void onPause() {
         closeCamera();
     }
 
+    @Override
     public void onDestroy() {
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();

@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.hardware.Camera;
 import android.media.MediaMetadataRetriever;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,7 +14,6 @@ import android.widget.TextView;
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camerademo.MediaDisplayActivity;
 import com.android.xz.camerademo.R;
-import com.android.xz.camerademo.camera_activity.SurfaceCameraActivity;
 import com.android.xz.camerademo.view.CaptureButton;
 import com.android.xz.encoder.MediaRecordListener;
 import com.android.xz.util.ImageUtils;
@@ -23,6 +21,7 @@ import com.android.xz.view.CameraSurfaceView;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
 
 public class MediaCodecBufferActivity extends AppCompatActivity {
 
@@ -69,7 +68,9 @@ public class MediaCodecBufferActivity extends AppCompatActivity {
     }
 
     private void capture() {
-        mCameraManager.takePicture(mPictureCallback);
+        mCameraManager.takePicture(data -> {
+            new ImageSaveTask().executeOnExecutor(Executors.newSingleThreadExecutor(), data); // 保存图片
+        });
     }
 
     private void startRecord() {
@@ -94,14 +95,6 @@ public class MediaCodecBufferActivity extends AppCompatActivity {
         @Override
         public void onStopRecord() {
             stopRecord();
-        }
-    };
-
-    private final Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
-        @Override
-        public void onPictureTaken(byte[] data, Camera camera) {
-            mCameraManager.startPreview(mCameraSurfaceView.getSurfaceHolder()); // 拍摄结束继续预览
-            new ImageSaveTask().execute(data); // 保存图片
         }
     };
 

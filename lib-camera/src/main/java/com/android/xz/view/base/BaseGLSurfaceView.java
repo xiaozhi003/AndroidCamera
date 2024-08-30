@@ -32,7 +32,7 @@ import javax.microedition.khronos.opengles.GL10;
  * 摄像头预览GLSurfaceView
  * Created by wangzhi on 2024/8/22.
  */
-public abstract class BaseGLSurfaceView extends GLSurfaceView implements SurfaceTexture.OnFrameAvailableListener, CameraCallback {
+public abstract class BaseGLSurfaceView extends GLSurfaceView implements SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
 
     private static final String TAG = BaseGLSurfaceView.class.getSimpleName();
 
@@ -146,6 +146,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
     /**
      * 打开摄像头并预览
      */
+    @Override
     public void onResume() {
         super.onResume();
         if (hasSurface) {
@@ -164,6 +165,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         stopRecord();
     }
 
+    @Override
     public void onDestroy() {
         mCameraHandler.invalidateHandler();
     }

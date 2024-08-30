@@ -5,6 +5,7 @@ import android.util.Size;
 import android.view.SurfaceHolder;
 
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.camera.callback.PictureBufferCallback;
 import com.android.xz.camera.callback.PreviewBufferCallback;
 
 public interface ICameraManager {
@@ -35,4 +36,6 @@ public interface ICameraManager {
 
     void setCameraCallback(CameraCallback cameraCallback);
     void addPreviewBufferCallback(PreviewBufferCallback previewBufferCallback);
+    void takePicture(PictureBufferCallback pictureCallback);
+    void switchCamera();
 }

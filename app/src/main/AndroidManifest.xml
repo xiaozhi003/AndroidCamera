@@ -17,9 +17,6 @@
         android:theme="@style/Theme.AndroidCamera.NoActionBar"
         tools:targetApi="31">
         <activity
-            android:name=".mediacodec_activity.MediaCodecSurfaceActivity"
-            android:exported="false" />
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AndroidCamera">
@@ -30,34 +27,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".camera_activity.SurfaceCameraActivity"
+            android:name=".CameraActivity"
             android:exported="false" />
         <activity
-            android:name=".camera_activity.TextureCameraActivity"
-            android:exported="false" />
-        <activity
-            android:name=".camera_activity.GLTextureCameraActivity"
-            android:exported="false" />
-        <activity
-            android:name=".camera_activity.GLSurfaceCameraActivity"
-            android:exported="false" />
-        <activity
-            android:name=".camera_activity.GLSurfaceHolderCameraActivity"
-            android:exported="false" />
-        <activity
-            android:name=".camera2_activity.SurfaceCamera2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".camera2_activity.TextureCamera2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".camera2_activity.GLSurfaceCamera2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".camera2_activity.GLTextureCamera2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".camera2_activity.GLSurfaceHolderCamera2Activity"
+            android:name=".mediacodec_activity.MediaCodecSurfaceActivity"
             android:exported="false" />
         <activity
             android:name=".mediacodec_activity.MediaCodecBufferActivity"

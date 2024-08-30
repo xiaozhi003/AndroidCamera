@@ -18,6 +18,7 @@ import com.android.xz.encoder.MediaVideoBufferEncoder;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 import com.android.xz.util.YUVUtils;
+import com.android.xz.view.base.BaseCameraView;
 import com.android.xz.view.base.BaseSurfaceView;
 
 import java.io.File;

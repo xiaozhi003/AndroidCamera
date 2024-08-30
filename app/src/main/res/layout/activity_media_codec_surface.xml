@@ -50,8 +50,11 @@
 
     <ImageView
         android:id="@+id/switchCameraBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:background="@drawable/img_switch_bg"
+        android:padding="14dp"
+        android:scaleType="centerInside"
         android:src="@drawable/ic_switch_camera"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -60,8 +63,8 @@
 
     <ImageView
         android:id="@+id/pictureIv"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toRightOf="@id/captureBtn"

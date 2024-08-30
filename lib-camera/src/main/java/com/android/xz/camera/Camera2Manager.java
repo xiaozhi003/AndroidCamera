@@ -34,6 +34,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.camera.callback.PictureBufferCallback;
 import com.android.xz.camera.callback.PreviewBufferCallback;
 import com.android.xz.util.Logs;
 
@@ -93,6 +94,7 @@ public class Camera2Manager implements ICameraManager {
     private int mPreviewHeight = 1080;
     private float mPreviewScale = mPreviewHeight * 1f / mPreviewWidth;
     private List<PreviewBufferCallback> mPreviewBufferCallbacks = new ArrayList<>();
+    private PictureBufferCallback mPictureBufferCallback;
     /**
      * 拍照大小
      */
@@ -476,6 +478,21 @@ public class Camera2Manager implements ICameraManager {
     @Override
     public int getDisplayOrientation() {
         return mDisplayRotation;
+    }
+
+    @Override
+    public void takePicture(PictureBufferCallback pictureBufferCallback) {
+        mPictureBufferCallback = pictureBufferCallback;
+        captureStillPicture(reader -> {
+            Image image = reader.acquireNextImage();
+            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            image.close();
+            if (mPictureBufferCallback != null) {
+                mPictureBufferCallback.onPictureToken(bytes);
+            }
+        });
     }
 
     public void captureStillPicture(ImageReader.OnImageAvailableListener onImageAvailableListener) {
@@ -889,7 +906,7 @@ public class Camera2Manager implements ICameraManager {
                     }
                 }
                 if (!mPreviewBufferCallbacks.isEmpty()) {
-                    for (PreviewBufferCallback previewBufferCallback: mPreviewBufferCallbacks) {
+                    for (PreviewBufferCallback previewBufferCallback : mPreviewBufferCallbacks) {
                         previewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight());
                     }
                 }

@@ -1,9 +1,5 @@
 package com.android.xz.camerademo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
@@ -11,16 +7,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
-import com.android.xz.camerademo.camera2_activity.GLSurfaceCamera2Activity;
-import com.android.xz.camerademo.camera2_activity.GLSurfaceHolderCamera2Activity;
-import com.android.xz.camerademo.camera2_activity.GLTextureCamera2Activity;
-import com.android.xz.camerademo.camera2_activity.SurfaceCamera2Activity;
-import com.android.xz.camerademo.camera2_activity.TextureCamera2Activity;
-import com.android.xz.camerademo.camera_activity.GLSurfaceCameraActivity;
-import com.android.xz.camerademo.camera_activity.GLSurfaceHolderCameraActivity;
-import com.android.xz.camerademo.camera_activity.GLTextureCameraActivity;
-import com.android.xz.camerademo.camera_activity.SurfaceCameraActivity;
-import com.android.xz.camerademo.camera_activity.TextureCameraActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.android.xz.camerademo.mediacodec_activity.MediaCodecBufferActivity;
 import com.android.xz.camerademo.mediacodec_activity.MediaCodecSurfaceActivity;
 import com.android.xz.permission.IPermissionsResult;
@@ -59,34 +49,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void passPermissions() {
                 switch (v.getId()) {
                     case R.id.surfaceCameraBtn:
-                        startActivity(new Intent(mContext, SurfaceCameraActivity.class));
+                        startCameraActivity(R.layout.activity_surface_camera);
                         break;
                     case R.id.textureCameraBtn:
-                        startActivity(new Intent(mContext, TextureCameraActivity.class));
+                        startCameraActivity(R.layout.activity_texture_camera);
                         break;
                     case R.id.glTextureCameraBtn:
-                        startActivity(new Intent(mContext, GLTextureCameraActivity.class));
+                        startCameraActivity(R.layout.activity_gltexture_camera);
                         break;
                     case R.id.glSurfaceCameraBtn:
-                        startActivity(new Intent(mContext, GLSurfaceCameraActivity.class));
-                        break;
-                    case R.id.surfaceCamera2Btn:
-                        startActivity(new Intent(mContext, SurfaceCamera2Activity.class));
-                        break;
-                    case R.id.textureCamera2Btn:
-                        startActivity(new Intent(mContext, TextureCamera2Activity.class));
-                        break;
-                    case R.id.glSurfaceCamera2Btn:
-                        startActivity(new Intent(mContext, GLSurfaceCamera2Activity.class));
-                        break;
-                    case R.id.glTextureCamera2Btn:
-                        startActivity(new Intent(mContext, GLTextureCamera2Activity.class));
+                        startCameraActivity(R.layout.activity_glsurface_camera);
                         break;
                     case R.id.glSurfaceHolderCameraBtn:
-                        startActivity(new Intent(mContext, GLSurfaceHolderCameraActivity.class));
+                        startCameraActivity(R.layout.activity_glsurface_holder_camera);
+                        break;
+                    case R.id.surfaceCamera2Btn:
+                        startCameraActivity(R.layout.activity_surface_camera2);
+                        break;
+                    case R.id.textureCamera2Btn:
+                        startCameraActivity(R.layout.activity_texture_camera2);
+                        break;
+                    case R.id.glSurfaceCamera2Btn:
+                        startCameraActivity(R.layout.activity_glsurface_camera2);
+                        break;
+                    case R.id.glTextureCamera2Btn:
+                        startCameraActivity(R.layout.activity_gltexture_camera2);
                         break;
                     case R.id.glSurfaceHolderCamera2Btn:
-                        startActivity(new Intent(mContext, GLSurfaceHolderCamera2Activity.class));
+                        startCameraActivity(R.layout.activity_glsurface_holder_camera2);
                         break;
                     case R.id.mediaCodecBufferBtn:
                         startActivity(new Intent(mContext, MediaCodecBufferActivity.class));
@@ -102,6 +92,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Toast.makeText(mContext, "用户拒绝Camera授权", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void startCameraActivity(int layoutId) {
+        Intent intent = new Intent(this, CameraActivity.class);
+        intent.putExtra(CameraActivity.EXTRA_LAYOUT_ID, layoutId);
+        startActivity(intent);
     }
 
     @Override

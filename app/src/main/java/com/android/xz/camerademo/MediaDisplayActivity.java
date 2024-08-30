@@ -10,10 +10,13 @@ import android.os.Bundle;
 import android.util.Size;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
+import com.android.xz.camerademo.util.ScreenTools;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
@@ -34,6 +37,7 @@ public class MediaDisplayActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ScreenTools.setTransparentStatusBar(this);
         setContentView(R.layout.activity_display_media);
 
         mMediaPath = getIntent().getStringExtra(EXTRA_MEDIA_PATH);
@@ -62,12 +66,7 @@ public class MediaDisplayActivity extends AppCompatActivity {
         mVideoView.setMediaController(mediaController);
 
         // 开始播放视频
-        mVideoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                Logs.i(TAG, "onCompletion...");
-            }
-        });
+        mVideoView.setOnCompletionListener(mp -> Logs.i(TAG, "onCompletion..."));
         mVideoView.setOnPreparedListener(mp -> {
             Logs.i(TAG, "onPrepared...");
             mp.start();

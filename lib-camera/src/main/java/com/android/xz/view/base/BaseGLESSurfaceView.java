@@ -16,7 +16,6 @@ import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 
-import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.gles.Drawable2d;
@@ -30,7 +29,7 @@ import com.android.xz.util.Logs;
 
 import java.lang.ref.WeakReference;
 
-public abstract class BaseGLESSurfaceView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, CameraCallback {
+public abstract class BaseGLESSurfaceView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
 
     private static final String TAG = BaseGLESSurfaceView.class.getSimpleName();
 
@@ -210,6 +209,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
     /**
      * 打开摄像头并预览
      */
+    @Override
     public void onResume() {
         if (hasSurface) {
             // 当activity暂停，但是并未停止的时候，surface仍然存在，所以 surfaceCreated()
@@ -221,10 +221,12 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
     /**
      * 停止预览并关闭摄像头
      */
+    @Override
     public void onPause() {
         closeCamera();
     }
 
+    @Override
     public void onDestroy() {
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
