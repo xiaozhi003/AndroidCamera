@@ -1,4 +1,4 @@
-package com.android.xz.view;
+package com.android.xz.camera.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -7,10 +7,11 @@ import android.view.SurfaceHolder;
 import com.android.xz.camera.Camera2Manager;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.util.Logs;
-import com.android.xz.view.base.BaseSurfaceView;
+import com.android.xz.camera.view.base.BaseSurfaceView;
 
 /**
- * Created by wangzhi on 2024/8/22.
+ * 适用Camera2的SurfaceView
+ * Created by xiaozhi on 2024/8/22.
  */
 public class Camera2SurfaceView extends BaseSurfaceView {
 

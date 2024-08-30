@@ -2,7 +2,6 @@ package com.android.xz.encoder;
 
 import android.content.Context;
 import android.media.MediaCodecInfo;
-import android.os.Build;
 import android.os.Handler;
 import android.util.Size;
 
@@ -14,8 +13,11 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
+/**
+ * 对Camera预览NV21数据编码
+ * created by xiaozhi 2024/8/30
+ */
 public class BufferMovieEncoder {
-
     private static final String TAG = BufferMovieEncoder.class.getSimpleName();
     private MediaVideoBufferEncoder mEncoder;
     private MediaMuxerWrapper mMuxerWrapper;
@@ -35,6 +37,12 @@ public class BufferMovieEncoder {
         mRecordListener = recordListener;
     }
 
+    /**
+     * 开始录制
+     *
+     * @param orientation 编码数据方向
+     * @param size        编码视频预览尺寸，通Camera的预览尺寸
+     */
     public void startRecord(int orientation, Size size) {
         mOrientation = orientation;
         mSize = size;
@@ -62,12 +70,9 @@ public class BufferMovieEncoder {
                 public void onStopped(MediaEncoder encoder) {
                     Logs.i(TAG, "onStopped");
                     String outputPath = encoder.getOutputPath();
-                    mUIHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mRecordListener != null) {
-                                mRecordListener.onStopped(outputPath);
-                            }
+                    mUIHandler.post(() -> {
+                        if (mRecordListener != null) {
+                            mRecordListener.onStopped(outputPath);
                         }
                     });
                 }
@@ -80,6 +85,9 @@ public class BufferMovieEncoder {
         }
     }
 
+    /**
+     * 停止录制
+     */
     public void stopRecord() {
         final MediaMuxerWrapper muxerWrapper = mMuxerWrapper;
         mMuxerWrapper = null;
@@ -89,6 +97,11 @@ public class BufferMovieEncoder {
         }
     }
 
+    /**
+     * 编码数据
+     *
+     * @param data nv21
+     */
     public void encode(byte[] data) {
         if (mEncoder != null) {
             int mColorFormat = mEncoder.getColorFormat();

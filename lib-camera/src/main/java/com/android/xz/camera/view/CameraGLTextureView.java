@@ -1,4 +1,4 @@
-package com.android.xz.view;
+package com.android.xz.camera.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -8,8 +8,12 @@ import androidx.annotation.Nullable;
 
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.ICameraManager;
-import com.android.xz.view.base.BaseGLTextureView;
+import com.android.xz.camera.view.base.BaseGLTextureView;
 
+/**
+ * 适用Camera的TextureView，自定义opengl
+ * Created by xiaozhi on 2024/8/22.
+ */
 public class CameraGLTextureView extends BaseGLTextureView {
 
     public CameraGLTextureView(@NonNull Context context) {
@@ -22,10 +26,6 @@ public class CameraGLTextureView extends BaseGLTextureView {
 
     public CameraGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-    }
-
-    public CameraGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     @Override

@@ -1,35 +1,26 @@
-package com.android.xz.view;
+package com.android.xz.camera.view;
 
 import android.content.Context;
-import android.media.MediaCodecInfo;
-import android.media.MediaMetadata;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.PreviewBufferCallback;
+import com.android.xz.camera.view.base.BaseSurfaceView;
 import com.android.xz.encoder.BufferMovieEncoder;
-import com.android.xz.encoder.MediaEncoder;
-import com.android.xz.encoder.MediaMuxerWrapper;
 import com.android.xz.encoder.MediaRecordListener;
-import com.android.xz.encoder.MediaVideoBufferEncoder;
-import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
-import com.android.xz.util.YUVUtils;
-import com.android.xz.view.base.BaseCameraView;
-import com.android.xz.view.base.BaseSurfaceView;
-
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Date;
 
 /**
- * Created by wangzhi on 2024/8/22.
+ * 适用Camera的SurfaceView预览
+ * Created by xiaozhi on 2024/8/22.
  */
 public class CameraSurfaceView extends BaseSurfaceView {
 
+    /**
+     * 使用Buffer录制视频类
+     */
     private BufferMovieEncoder mEncoder;
 
     public CameraSurfaceView(Context context) {
@@ -84,6 +75,9 @@ public class CameraSurfaceView extends BaseSurfaceView {
         }
     };
 
+    /**
+     * 开始录制视频
+     */
     public void startRecord() {
         if (!getCameraManager().isOpen()) {
             return;
@@ -92,6 +86,9 @@ public class CameraSurfaceView extends BaseSurfaceView {
         mEncoder.startRecord(getCameraManager().getOrientation(), getCameraManager().getPreviewSize());
     }
 
+    /**
+     * 停止录制视频
+     */
     public void stopRecord() {
         mEncoder.stopRecord();
     }

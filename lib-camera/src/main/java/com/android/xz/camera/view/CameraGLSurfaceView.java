@@ -1,13 +1,14 @@
-package com.android.xz.view;
+package com.android.xz.camera.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
 
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.ICameraManager;
-import com.android.xz.view.base.BaseGLSurfaceView;
+import com.android.xz.camera.view.base.BaseGLSurfaceView;
 
 /**
+ * 适用Camera的GLSurfaceView预览
  * Created by wangzhi on 2024/8/22.
  */
 public class CameraGLSurfaceView extends BaseGLSurfaceView {

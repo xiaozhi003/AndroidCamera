@@ -17,7 +17,7 @@ import com.android.xz.camerademo.R;
 import com.android.xz.camerademo.view.CaptureButton;
 import com.android.xz.encoder.MediaRecordListener;
 import com.android.xz.util.ImageUtils;
-import com.android.xz.view.CameraSurfaceView;
+import com.android.xz.camera.view.CameraSurfaceView;
 
 import java.util.Timer;
 import java.util.TimerTask;

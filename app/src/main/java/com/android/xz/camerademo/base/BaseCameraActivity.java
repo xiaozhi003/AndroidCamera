@@ -14,7 +14,7 @@ import com.android.xz.camera.ICameraManager;
 import com.android.xz.camerademo.MediaDisplayActivity;
 import com.android.xz.camerademo.R;
 import com.android.xz.util.ImageUtils;
-import com.android.xz.view.base.BaseCameraView;
+import com.android.xz.camera.view.base.BaseCameraView;
 
 import java.util.concurrent.Executors;
 

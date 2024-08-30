@@ -16,7 +16,7 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.android.xz.view.CameraSurfaceView
+        <com.android.xz.camera.view.CameraSurfaceView
             android:id="@+id/cameraView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />

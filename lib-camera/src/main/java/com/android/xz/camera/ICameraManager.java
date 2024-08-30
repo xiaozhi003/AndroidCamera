@@ -8,6 +8,10 @@ import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.camera.callback.PictureBufferCallback;
 import com.android.xz.camera.callback.PreviewBufferCallback;
 
+/**
+ * Camera和Camera2通用接口
+ * Created by wangzhi on 2024/8/15.
+ */
 public interface ICameraManager {
 
     void openCamera();

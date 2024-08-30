@@ -46,7 +46,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
-
+/**
+ * Camera2实现
+ * Created by wangzhi on 2024/8/15.
+ */
 public class Camera2Manager implements ICameraManager {
 
     private static final String TAG = Camera2Manager.class.getSimpleName();

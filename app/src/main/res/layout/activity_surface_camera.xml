@@ -6,9 +6,9 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:orientation="vertical"
-    tools:context=".camera_activity.SurfaceCameraActivity">
+    tools:context=".CameraActivity">
 
-    <com.android.xz.view.CameraSurfaceView
+    <com.android.xz.camera.view.CameraSurfaceView
         android:id="@+id/cameraView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

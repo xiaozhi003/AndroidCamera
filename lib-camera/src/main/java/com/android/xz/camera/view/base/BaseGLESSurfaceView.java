@@ -1,9 +1,9 @@
-package com.android.xz.view.base;
+package com.android.xz.camera.view.base;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Handler;
@@ -11,15 +11,13 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.TextureView;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
-import com.android.xz.encoder.MediaRecordListener;
-import com.android.xz.encoder.TextureMovieEncoder;
 import com.android.xz.gles.Drawable2d;
 import com.android.xz.gles.EglCore;
 import com.android.xz.gles.GlUtil;
@@ -27,25 +25,26 @@ import com.android.xz.gles.ScaledDrawable2d;
 import com.android.xz.gles.Sprite2d;
 import com.android.xz.gles.Texture2dProgram;
 import com.android.xz.gles.WindowSurface;
-import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.Date;
 
-public abstract class BaseGLTextureView extends TextureView implements TextureView.SurfaceTextureListener, SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
-    private static final String TAG = BaseGLTextureView.class.getSimpleName();
+/**
+ * 摄像头预览SurfaceView，自定义opengl
+ * Created by wangzhi on 2024/8/22.
+ */
+public abstract class BaseGLESSurfaceView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
+
+    private static final String TAG = BaseGLESSurfaceView.class.getSimpleName();
 
     private static final int DEFAULT_ZOOM_PERCENT = 0;      // 0-100
     private static final int DEFAULT_SIZE_PERCENT = 100;     // 0-100
     private static final int DEFAULT_ROTATE_PERCENT = 0;    // 0-100
 
     private Context mContext;
-    private SurfaceTexture mSurfaceTexture;
+    private SurfaceHolder mSurfaceHolder;
     private SurfaceTexture mPreviewSurfaceTexture;
     private MainHandler mMainHandler;
-    private boolean isMirror;
     private boolean hasSurface; // 是否存在摄像头显示层
     private ICameraManager mCameraManager;
     private int mRatioWidth = 0;
@@ -53,62 +52,79 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     private int mPreviewWidth;
     private int mPreviewHeight;
     private RenderThread mRenderThread;
-    private TextureMovieEncoder mMovieEncoder;
-    private boolean mRecordingEnabled;      // controls button state
 
-    public BaseGLTextureView(@NonNull Context context) {
+    public BaseGLESSurfaceView(Context context) {
         super(context);
         init(context);
     }
 
-    public BaseGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public BaseGLESSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    public BaseGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public BaseGLESSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }
 
-    public BaseGLTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public BaseGLESSurfaceView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context);
     }
 
     private void init(Context context) {
         mContext = context;
+        mSurfaceHolder = getHolder();
+        mSurfaceHolder.setFormat(PixelFormat.TRANSPARENT);//translucent半透明 transparent透明
+        mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        mSurfaceHolder.addCallback(this);
         mCameraManager = createCameraManager(context);
         mCameraManager.setCameraCallback(this);
-        setSurfaceTextureListener(this);
         mMainHandler = new MainHandler(this);
-        mMovieEncoder = new TextureMovieEncoder(context);
-        mRenderThread = new RenderThread(mMainHandler, mMovieEncoder);
+        mRenderThread = new RenderThread(mMainHandler);
         mRenderThread.start();
         mRenderThread.waitUntilReady();
     }
 
-    public void startRecord() {
-        mRecordingEnabled = true;
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendRecordState(true);
-            }
-        }
-    }
-
-    public void stopRecord() {
-        mRecordingEnabled = false;
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendRecordState(false);
-            }
-        }
-    }
-
     public abstract ICameraManager createCameraManager(Context context);
+
+    @Override
+    public void surfaceCreated(@NonNull SurfaceHolder holder) {
+        Logs.i(TAG, "surfaceCreated.");
+        mSurfaceHolder = holder;
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendSurfaceAvailable(mSurfaceHolder, true);
+            }
+        }
+    }
+
+    @Override
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+        Logs.i(TAG, "surfaceChanged " + width + "x" + height);
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendSurfaceChanged(0, width, height);
+            }
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+        Logs.v(TAG, "onSurfaceTextureDestroyed.");
+        closeCamera();
+        mSurfaceHolder = null;
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendSurfaceDestroyed();
+            }
+        }
+        hasSurface = false;
+    }
 
     /**
      * 获取摄像头工具类
@@ -117,25 +133,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
      */
     public ICameraManager getCameraManager() {
         return mCameraManager;
-    }
-
-    /**
-     * 是否镜像
-     *
-     * @return
-     */
-    public boolean isMirror() {
-        return isMirror;
-    }
-
-    /**
-     * 设置是否镜像
-     *
-     * @param mirror
-     */
-    public void setMirror(boolean mirror) {
-        isMirror = mirror;
-        requestLayout();
     }
 
     private void setAspectRatio(int width, int height) {
@@ -161,14 +158,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
             }
         }
-
-        if (isMirror) {
-            android.graphics.Matrix transform = new android.graphics.Matrix();
-            transform.setScale(-1, 1, getMeasuredWidth() / 2, 0);
-            setTransform(transform);
-        } else {
-            setTransform(null);
-        }
     }
 
     /**
@@ -176,52 +165,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
      *
      * @return
      */
-    @Override
     public SurfaceTexture getSurfaceTexture() {
         return mPreviewSurfaceTexture;
-    }
-
-    @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
-        Logs.i(TAG, "onSurfaceTextureAvailable " + width + "x" + height);
-        mSurfaceTexture = surfaceTexture;
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendSurfaceAvailable(mSurfaceTexture, true);
-                handler.sendSurfaceChanged(0, width, height);
-            }
-        }
-    }
-
-    @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
-        Logs.i(TAG, "onSurfaceTextureSizeChanged " + width + "x" + height);
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendSurfaceChanged(0, width, height);
-            }
-        }
-    }
-
-    @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-        Logs.v(TAG, "onSurfaceTextureDestroyed.");
-        closeCamera();
-        mSurfaceTexture = null;
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendSurfaceDestroyed();
-            }
-        }
-        hasSurface = false;
-        return true;
-    }
-
-    @Override
-    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
     }
 
     @Override
@@ -348,9 +293,9 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
         public static final int MSG_SURFACE_CHANGED = 1;
 
-        private WeakReference<BaseGLTextureView> mWeakGLSurfaceView;
+        private WeakReference<BaseGLESSurfaceView> mWeakGLSurfaceView;
 
-        public MainHandler(BaseGLTextureView view) {
+        public MainHandler(BaseGLESSurfaceView view) {
             mWeakGLSurfaceView = new WeakReference<>(view);
         }
 
@@ -367,7 +312,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             super.handleMessage(msg);
             int what = msg.what;
 
-            BaseGLTextureView view = mWeakGLSurfaceView.get();
+            BaseGLESSurfaceView view = mWeakGLSurfaceView.get();
             if (view == null) {
                 return;
             }
@@ -393,7 +338,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         private static final int MSG_ROTATE_VALUE = 7;
         private static final int MSG_POSITION = 8;
         private static final int MSG_REDRAW = 9;
-        private static final int MSG_RECORD_STATE = 10;
 
         // This shouldn't need to be a weak ref, since we'll go away when the Looper quits,
         // but no real harm in it.
@@ -417,8 +361,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
          * <p>
          * Call from UI thread.
          */
-        public void sendSurfaceAvailable(SurfaceTexture surfaceTexture, boolean newSurface) {
-            sendMessage(obtainMessage(MSG_SURFACE_AVAILABLE, newSurface ? 1 : 0, 0, surfaceTexture));
+        public void sendSurfaceAvailable(SurfaceHolder surfaceHolder, boolean newSurface) {
+            sendMessage(obtainMessage(MSG_SURFACE_AVAILABLE, newSurface ? 1 : 0, 0, surfaceHolder));
         }
 
         /**
@@ -477,10 +421,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             sendMessage(obtainMessage(MSG_SIZE_VALUE, width, height));
         }
 
-        public void sendRecordState(boolean state) {
-            sendMessage(obtainMessage(MSG_RECORD_STATE, state));
-        }
-
         @Override  // runs on RenderThread
         public void handleMessage(Message msg) {
             int what = msg.what;
@@ -494,7 +434,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
             switch (what) {
                 case MSG_SURFACE_AVAILABLE:
-                    renderThread.surfaceAvailable((SurfaceTexture) msg.obj, msg.arg1 != 0);
+                    renderThread.surfaceAvailable((SurfaceHolder) msg.obj, msg.arg1 != 0);
                     break;
                 case MSG_SURFACE_CHANGED:
                     renderThread.surfaceChanged(msg.arg1, msg.arg2);
@@ -514,9 +454,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 case MSG_ROTATE_VALUE:
                     renderThread.setRotate(msg.arg1, msg.arg2);
                     break;
-                case MSG_RECORD_STATE:
-                    renderThread.changeRecordingState((boolean) msg.obj);
-                    break;
                 default:
                     throw new RuntimeException("unknown message " + what);
             }
@@ -531,10 +468,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
      */
     static class RenderThread extends Thread {
 
-        private static final int RECORDING_OFF = 0;
-        private static final int RECORDING_ON = 1;
-        private static final int RECORDING_RESUMED = 2;
-
         // Used to wait for the thread to start.
         private Object mStartLock = new Object();
         private boolean mReady = false;
@@ -543,7 +476,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
         // width/height of the incoming camera preview frames
         private SurfaceTexture mPreviewTexture;
-        private int mTextureId;
 
         private float[] mDisplayProjectionMatrix = new float[16];
         private EglCore mEglCore;
@@ -565,16 +497,10 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         private boolean mRotateUpdated;
         private boolean mMirror;
 
-        private File mOutputFile;
-        private TextureMovieEncoder mVideoEncoder;
-        private boolean mRecordingEnabled;
-        private int mRecordingStatus;
-        private long mVideoMillis;
-
-        public RenderThread(MainHandler mainHandler, TextureMovieEncoder textureMovieEncoder) {
+        public RenderThread(MainHandler mainHandler) {
             super("Renderer Thread");
             mMainHandler = mainHandler;
-            mVideoEncoder = textureMovieEncoder;
+
             mSizeUpdated = false;
         }
 
@@ -600,21 +526,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             mEglCore.release();
 
             Logs.v(TAG, "Render Thread exit.");
-        }
-
-        /**
-         * Notifies the renderer that we want to stop or start recording.
-         */
-        public void changeRecordingState(boolean isRecording) {
-            Log.d(TAG, "changeRecordingState: was " + mRecordingEnabled + " now " + isRecording);
-            mRecordingEnabled = isRecording;
-        }
-
-        public void notifyStopRecord() {
-            if (mVideoEncoder != null && mVideoEncoder.isRecording()) {
-                mVideoEncoder.stopRecording();
-                mRecordingStatus = RECORDING_OFF;
-            }
         }
 
         /**
@@ -644,23 +555,16 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             return mHandler;
         }
 
-        public void surfaceAvailable(SurfaceTexture surfaceTexture, boolean newSurface) {
-            mRecordingEnabled = mVideoEncoder.isRecording();
-            if (mRecordingEnabled) {
-                mRecordingStatus = RECORDING_RESUMED;
-            } else {
-                mRecordingStatus = RECORDING_OFF;
-            }
-
-            mWindowSurface = new WindowSurface(mEglCore, surfaceTexture);
+        public void surfaceAvailable(SurfaceHolder surfaceHolder, boolean newSurface) {
+            mWindowSurface = new WindowSurface(mEglCore, surfaceHolder.getSurface(), false);
             mWindowSurface.makeCurrent();
 
             // Create and configure the SurfaceTexture, which will receive frames from the
             // camera.  We set the textured rect's program to render from it.
             mTexProgram = new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT);
-            mTextureId = mTexProgram.createTextureObject();
-            mPreviewTexture = new SurfaceTexture(mTextureId);
-            mRect.setTexture(mTextureId);
+            int textureId = mTexProgram.createTextureObject();
+            mPreviewTexture = new SurfaceTexture(textureId);
+            mRect.setTexture(textureId);
 
             if (!newSurface) {
                 mWindowSurfaceWidth = mWindowSurface.getWidth();
@@ -746,65 +650,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             mPreviewTexture.updateTexImage();
             GlUtil.checkGlError("draw start");
 
-            // If the recording state is changing, take care of it here.  Ideally we wouldn't
-            // be doing all this in onDrawFrame(), but the EGLContext sharing with GLSurfaceView
-            // makes it hard to do elsewhere.
-            if (mRecordingEnabled) {
-                switch (mRecordingStatus) {
-                    case RECORDING_OFF:
-                        Log.d(TAG, "START recording");
-                        // 开始录制前删除之前的视频文件
-                        String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
-                        mOutputFile = new File(ImageUtils.getVideoPath(), name);
-                        // start recording
-                        mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
-                                mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, EGL14.eglGetCurrentContext()));
-                        mRecordingStatus = RECORDING_ON;
-                        break;
-                    case RECORDING_RESUMED:
-                        Log.d(TAG, "RESUME recording");
-                        mVideoEncoder.updateSharedContext(EGL14.eglGetCurrentContext());
-                        mRecordingStatus = RECORDING_ON;
-                        break;
-                    case RECORDING_ON:
-                        // yay
-                        break;
-                    default:
-                        throw new RuntimeException("unknown status " + mRecordingStatus);
-                }
-            } else {
-                switch (mRecordingStatus) {
-                    case RECORDING_ON:
-                    case RECORDING_RESUMED:
-                        // stop recording
-                        Log.d(TAG, "STOP recording");
-                        mVideoEncoder.stopRecording();
-                        mRecordingStatus = RECORDING_OFF;
-                        break;
-                    case RECORDING_OFF:
-                        // yay
-                        break;
-                    default:
-                        throw new RuntimeException("unknown status " + mRecordingStatus);
-                }
-            }
-
-            //        if (mVideoEncoder.isRecording() && System.currentTimeMillis() - mVideoMillis > 50) {
-            if (mVideoEncoder.isRecording()) {
-                // Set the video encoder's texture name.  We only need to do this once, but in the
-                // current implementation it has to happen after the video encoder is started, so
-                // we just do it here.
-                //
-                // TODO: be less lame.
-                mVideoEncoder.setTextureId(mTextureId);
-
-                // Tell the video encoder thread that a new frame is available.
-                // This will be ignored if we're not actually recording.
-                mVideoEncoder.frameAvailable(mPreviewTexture);
-
-                mVideoMillis = System.currentTimeMillis();
-            }
-
             if (mSizeUpdated) {
                 mSizeUpdated = false;
                 finishSurfaceSetup();
@@ -834,10 +679,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             mRotateUpdated = true;
         }
 
-        public void setMirror(boolean mirror) {
-
-        }
-
         /**
          * Releases most of the GL resources we currently hold (anything allocated by
          * surfaceAvailable()).
@@ -864,10 +705,5 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             mEglCore.makeNothingCurrent();
         }
     }
-
-    public void setRecordListener(MediaRecordListener recordListener) {
-        if (mMovieEncoder != null) {
-            mMovieEncoder.setRecordListener(recordListener);
-        }
-    }
 }
+ 

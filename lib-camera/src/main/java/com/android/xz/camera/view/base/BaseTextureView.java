@@ -1,4 +1,4 @@
-package com.android.xz.view.base;
+package com.android.xz.camera.view.base;
 
 import android.content.Context;
 import android.graphics.Matrix;

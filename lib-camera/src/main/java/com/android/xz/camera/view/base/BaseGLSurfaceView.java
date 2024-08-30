@@ -1,10 +1,9 @@
-package com.android.xz.view.base;
+package com.android.xz.camera.view.base;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
