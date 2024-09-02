@@ -13,7 +13,9 @@ import com.android.xz.util.Logs;
 
 /**
  * 摄像头预览SurfaceView
- * Created by wangzhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHolder.Callback, CameraCallback, BaseCameraView {
 

@@ -25,7 +25,9 @@ import java.util.List;
 
 /**
  * Camera实现
- * Created by wangzhi on 2024/8/15.
+ *
+ * @author xiaozhi
+ * @since 2024/8/15
  */
 public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
 

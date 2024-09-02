@@ -14,7 +14,9 @@ import com.android.xz.util.Logs;
 
 /**
  * 适用Camera的SurfaceView预览
- * Created by xiaozhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public class CameraSurfaceView extends BaseSurfaceView {
 

@@ -12,7 +12,9 @@ import com.android.xz.util.Logs;
 
 /**
  * 摄像头预览TextureView
- * Created by wangzhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public abstract class BaseTextureView extends TextureView implements TextureView.SurfaceTextureListener, CameraCallback, BaseCameraView {
     private static final String TAG = BaseTextureView.class.getSimpleName();

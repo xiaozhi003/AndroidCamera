@@ -48,7 +48,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Camera2实现
- * Created by wangzhi on 2024/8/15.
+ *
+ * @author xiaozhi
+ * @since 2024/8/15
  */
 public class Camera2Manager implements ICameraManager {
 

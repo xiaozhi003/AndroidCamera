@@ -9,7 +9,9 @@ import com.android.xz.camera.view.base.BaseGLESSurfaceView;
 
 /**
  * 适用Camera的SurfaceView，自定义opengl
- * Created by xiaozhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public class CameraGLSurfaceHolderView extends BaseGLESSurfaceView {
 

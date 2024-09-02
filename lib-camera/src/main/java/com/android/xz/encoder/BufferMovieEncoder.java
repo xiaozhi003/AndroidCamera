@@ -15,7 +15,9 @@ import java.util.Date;
 
 /**
  * 对Camera预览NV21数据编码
- * created by xiaozhi 2024/8/30
+ *
+ * @author xiaozhi
+ * @since 2024/8/30
  */
 public class BufferMovieEncoder {
     private static final String TAG = BufferMovieEncoder.class.getSimpleName();

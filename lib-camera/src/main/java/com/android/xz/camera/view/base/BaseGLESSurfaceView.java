@@ -31,7 +31,9 @@ import java.lang.ref.WeakReference;
 
 /**
  * 摄像头预览SurfaceView，自定义opengl
- * Created by wangzhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public abstract class BaseGLESSurfaceView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
 

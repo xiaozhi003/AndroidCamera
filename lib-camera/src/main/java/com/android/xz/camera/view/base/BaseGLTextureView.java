@@ -36,7 +36,9 @@ import java.util.Date;
 
 /**
  * 摄像头预览TextureView，自定义opengl
- * Created by wangzhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public abstract class BaseGLTextureView extends TextureView implements TextureView.SurfaceTextureListener, SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
     private static final String TAG = BaseGLTextureView.class.getSimpleName();

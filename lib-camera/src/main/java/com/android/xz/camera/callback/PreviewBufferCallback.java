@@ -2,7 +2,9 @@ package com.android.xz.camera.callback;
 
 /**
  * 摄像头预览数据回调
- * Created by wangzhi on 2024/8/15.
+ *
+ * @author xiaozhi
+ * @since 2024/8/15
  */
 public interface PreviewBufferCallback {
 

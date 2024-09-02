@@ -12,7 +12,9 @@ import com.android.xz.camera.view.base.BaseGLTextureView;
 
 /**
  * 适用Camera的TextureView，自定义opengl
- * Created by xiaozhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public class CameraGLTextureView extends BaseGLTextureView {
 

@@ -4,7 +4,9 @@ import android.hardware.Camera;
 
 /**
  * 摄像头打开预览等回调
- * Created by wangzhi on 2024/8/15.
+ *
+ * @author xiaozhi
+ * @since 2024/8/15
  */
 public interface CameraCallback {
 

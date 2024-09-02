@@ -9,7 +9,9 @@ import com.android.xz.camera.view.base.BaseGLSurfaceView;
 
 /**
  * 适用Camera的GLSurfaceView预览
- * Created by wangzhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public class CameraGLSurfaceView extends BaseGLSurfaceView {
 

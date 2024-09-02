@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * 权限申请工具类
  *
- * @author wangzhi
+ * @author xiaozhi
  * @since 2023/5/16
  */
 public class PermissionUtils {

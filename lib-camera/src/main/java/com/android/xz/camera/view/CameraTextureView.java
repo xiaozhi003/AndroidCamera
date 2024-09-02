@@ -9,7 +9,9 @@ import com.android.xz.camera.view.base.BaseTextureView;
 
 /**
  * 适用Camera的TextureView
- * Created by xiaozhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public class CameraTextureView extends BaseTextureView {
 

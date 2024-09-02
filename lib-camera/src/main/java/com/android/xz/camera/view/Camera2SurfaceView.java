@@ -11,7 +11,9 @@ import com.android.xz.camera.view.base.BaseSurfaceView;
 
 /**
  * 适用Camera2的SurfaceView
- * Created by xiaozhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public class Camera2SurfaceView extends BaseSurfaceView {
 

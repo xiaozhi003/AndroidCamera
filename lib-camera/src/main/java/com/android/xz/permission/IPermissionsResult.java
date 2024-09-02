@@ -3,7 +3,7 @@ package com.android.xz.permission;
 /**
  * 权限申请的结果回调
  *
- * @author wangzhi
+ * @author xiaozhi
  * @since 2023/5/16
  */
 public interface IPermissionsResult {

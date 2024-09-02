@@ -29,7 +29,9 @@ import javax.microedition.khronos.opengles.GL10;
 
 /**
  * 摄像头预览GLSurfaceView
- * Created by wangzhi on 2024/8/22.
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
  */
 public abstract class BaseGLSurfaceView extends GLSurfaceView implements SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
 
