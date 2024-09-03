@@ -1,7 +1,11 @@
 # AndroidCamera
 
 本项目主要涉及Android开发中Camera的相关操作、预览方式、视频录制等。项目结构简单代码耦合性低，适合学习和使用
-![Alt](https://i-blog.csdnimg.cn/direct/32cf9876acb84a5c9786534ce51d4c8b.jpeg#pic_center =288x640)
+
+<p align = "center">    
+<img  src="./img/index.jpeg" height="640" />
+</p>
+
 
 ## lib-camera
 |包|说明  |
