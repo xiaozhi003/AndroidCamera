@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.SurfaceHolder;
 
 import androidx.annotation.NonNull;
 
@@ -115,6 +116,13 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                 setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
             }
         }
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        super.surfaceDestroyed(holder);
+        closeCamera();
+        hasSurface = false;
     }
 
     @Override
