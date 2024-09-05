@@ -307,9 +307,9 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         private final float[] mSTMatrix = new float[16];
         private FullFrameRect mFullScreen;
         // width/height of the incoming camera preview frames
-        private boolean mIncomingSizeUpdated;
-        private int mIncomingWidth;
-        private int mIncomingHeight;
+        private boolean mSizeUpdated;
+        private int mCameraPreviewWidth;
+        private int mCameraPreviewHeight;
         private int mTextureId;
         private SurfaceTexture mSurfaceTexture;
 
@@ -328,8 +328,8 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
 
             mRecordingStatus = -1;
             mRecordingEnabled = false;
-            mIncomingSizeUpdated = false;
-            mIncomingWidth = mIncomingHeight = -1;
+            mSizeUpdated = false;
+            mCameraPreviewWidth = mCameraPreviewHeight = -1;
         }
 
         /**
@@ -365,7 +365,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                 mFullScreen.release(false);     // assume the GLSurfaceView EGL context is about
                 mFullScreen = null;             //  to be destroyed
             }
-            mIncomingWidth = mIncomingHeight = -1;
+            mCameraPreviewWidth = mCameraPreviewHeight = -1;
         }
 
         @Override
@@ -420,7 +420,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                         mOutputFile = new File(ImageUtils.getVideoPath(), name);
                         // start recording
                         mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
-                                mOutputFile, mIncomingHeight, mIncomingWidth, mIncomingWidth * mIncomingHeight * 10, EGL14.eglGetCurrentContext()));
+                                mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, EGL14.eglGetCurrentContext()));
                         mRecordingStatus = RECORDING_ON;
                         break;
                     case RECORDING_RESUMED:
@@ -467,12 +467,12 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                 mVideoMillis = System.currentTimeMillis();
             }
 
-            if (mIncomingWidth <= 0 || mIncomingHeight <= 0) {
+            if (mCameraPreviewWidth <= 0 || mCameraPreviewHeight <= 0) {
                 return;
             }
-            if (mIncomingSizeUpdated) {
-                mFullScreen.getProgram().setTexSize(mIncomingWidth, mIncomingHeight);
-                mIncomingSizeUpdated = false;
+            if (mSizeUpdated) {
+                mFullScreen.getProgram().setTexSize(mCameraPreviewWidth, mCameraPreviewHeight);
+                mSizeUpdated = false;
             }
 
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
@@ -480,9 +480,9 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         }
 
         public void setCameraPreviewSize(int width, int height) {
-            mIncomingWidth = width;
-            mIncomingHeight = height;
-            mIncomingSizeUpdated = true;
+            mCameraPreviewWidth = width;
+            mCameraPreviewHeight = height;
+            mSizeUpdated = true;
         }
     }
 

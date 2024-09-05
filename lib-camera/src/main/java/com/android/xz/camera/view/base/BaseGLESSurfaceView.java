@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Handler;
@@ -18,16 +19,22 @@ import androidx.annotation.NonNull;
 
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
+import com.android.xz.encoder.MediaRecordListener;
+import com.android.xz.encoder.TextureMovieEncoder;
 import com.android.xz.gles.Drawable2d;
 import com.android.xz.gles.EglCore;
+import com.android.xz.gles.FullFrameRect;
 import com.android.xz.gles.GlUtil;
 import com.android.xz.gles.ScaledDrawable2d;
 import com.android.xz.gles.Sprite2d;
 import com.android.xz.gles.Texture2dProgram;
 import com.android.xz.gles.WindowSurface;
+import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.Date;
 
 /**
  * 摄像头预览SurfaceView，自定义opengl
@@ -38,10 +45,6 @@ import java.lang.ref.WeakReference;
 public abstract class BaseGLESSurfaceView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, CameraCallback, BaseCameraView {
 
     private static final String TAG = BaseGLESSurfaceView.class.getSimpleName();
-
-    private static final int DEFAULT_ZOOM_PERCENT = 0;      // 0-100
-    private static final int DEFAULT_SIZE_PERCENT = 100;     // 0-100
-    private static final int DEFAULT_ROTATE_PERCENT = 0;    // 0-100
 
     private Context mContext;
     private SurfaceHolder mSurfaceHolder;
@@ -54,6 +57,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
     private int mPreviewWidth;
     private int mPreviewHeight;
     private RenderThread mRenderThread;
+    private TextureMovieEncoder mMovieEncoder;
 
     public BaseGLESSurfaceView(Context context) {
         super(context);
@@ -84,9 +88,28 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
         mCameraManager = createCameraManager(context);
         mCameraManager.setCameraCallback(this);
         mMainHandler = new MainHandler(this);
-        mRenderThread = new RenderThread(mMainHandler);
+        mMovieEncoder = new TextureMovieEncoder(context);
+        mRenderThread = new RenderThread(mMainHandler, mMovieEncoder);
         mRenderThread.start();
         mRenderThread.waitUntilReady();
+    }
+
+    public void startRecord() {
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendRecordState(true);
+            }
+        }
+    }
+
+    public void stopRecord() {
+        if (mRenderThread != null) {
+            RenderHandler handler = mRenderThread.getHandler();
+            if (handler != null) {
+                handler.sendRecordState(false);
+            }
+        }
     }
 
     public abstract ICameraManager createCameraManager(Context context);
@@ -245,12 +268,6 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
     @Override
     public void onOpen() {
         mCameraManager.startPreview(mPreviewSurfaceTexture);
-        if (mRenderThread != null) {
-            RenderHandler handler = mRenderThread.getHandler();
-            if (handler != null) {
-                handler.sendRotate(mCameraManager.getOrientation(), mCameraManager.getCameraId());
-            }
-        }
     }
 
     @Override
@@ -340,6 +357,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
         private static final int MSG_ROTATE_VALUE = 7;
         private static final int MSG_POSITION = 8;
         private static final int MSG_REDRAW = 9;
+        private static final int MSG_RECORD_STATE = 10;
 
         // This shouldn't need to be a weak ref, since we'll go away when the Looper quits,
         // but no real harm in it.
@@ -423,6 +441,10 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
             sendMessage(obtainMessage(MSG_SIZE_VALUE, width, height));
         }
 
+        public void sendRecordState(boolean state) {
+            sendMessage(obtainMessage(MSG_RECORD_STATE, state));
+        }
+
         @Override  // runs on RenderThread
         public void handleMessage(Message msg) {
             int what = msg.what;
@@ -454,7 +476,10 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
                     renderThread.setCameraPreviewSize(msg.arg1, msg.arg2);
                     break;
                 case MSG_ROTATE_VALUE:
-                    renderThread.setRotate(msg.arg1, msg.arg2);
+//                    renderThread.setRotate(msg.arg1, msg.arg2);
+                    break;
+                case MSG_RECORD_STATE:
+                    renderThread.changeRecordingState((boolean) msg.obj);
                     break;
                 default:
                     throw new RuntimeException("unknown message " + what);
@@ -470,6 +495,10 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
      */
     static class RenderThread extends Thread {
 
+        private static final int RECORDING_OFF = 0;
+        private static final int RECORDING_ON = 1;
+        private static final int RECORDING_RESUMED = 2;
+
         // Used to wait for the thread to start.
         private Object mStartLock = new Object();
         private boolean mReady = false;
@@ -478,31 +507,25 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
 
         // width/height of the incoming camera preview frames
         private SurfaceTexture mPreviewTexture;
+        private int mTextureId;
 
         private float[] mDisplayProjectionMatrix = new float[16];
         private EglCore mEglCore;
         private WindowSurface mWindowSurface;
-        private Texture2dProgram mTexProgram;
-        private final ScaledDrawable2d mRectDrawable =
-                new ScaledDrawable2d(Drawable2d.Prefab.RECTANGLE);
-        private final Sprite2d mRect = new Sprite2d(mRectDrawable);
-        private int mWindowSurfaceWidth;
-        private int mWindowSurfaceHeight;
+        private FullFrameRect mFullScreen;
         private int mCameraPreviewWidth, mCameraPreviewHeight;
         private boolean mSizeUpdated;
 
-        private int mZoomPercent = DEFAULT_ZOOM_PERCENT;
-        private int mSizePercent = DEFAULT_SIZE_PERCENT;
-        private int mRotatePercent = DEFAULT_ROTATE_PERCENT;
-        private float mPosX, mPosY;
-        private int mRotate;
-        private boolean mRotateUpdated;
-        private boolean mMirror;
+        private File mOutputFile;
+        private TextureMovieEncoder mVideoEncoder;
+        private boolean mRecordingEnabled;
+        private int mRecordingStatus;
+        private long mVideoMillis;
 
-        public RenderThread(MainHandler mainHandler) {
+        public RenderThread(MainHandler mainHandler, TextureMovieEncoder textureMovieEncoder) {
             super("Renderer Thread");
             mMainHandler = mainHandler;
-
+            mVideoEncoder = textureMovieEncoder;
             mSizeUpdated = false;
         }
 
@@ -528,6 +551,24 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
             mEglCore.release();
 
             Logs.v(TAG, "Render Thread exit.");
+        }
+
+        /**
+         * Notifies the renderer that we want to stop or start recording.
+         */
+        public void changeRecordingState(boolean isRecording) {
+            Log.d(TAG, "changeRecordingState: was " + mRecordingEnabled + " now " + isRecording);
+            mRecordingEnabled = isRecording;
+            if (!mRecordingEnabled) {
+                notifyStopRecord();
+            }
+        }
+
+        public void notifyStopRecord() {
+            if (mVideoEncoder != null && mVideoEncoder.isRecording()) {
+                mVideoEncoder.stopRecording();
+                mRecordingStatus = RECORDING_OFF;
+            }
         }
 
         /**
@@ -558,30 +599,29 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
         }
 
         public void surfaceAvailable(SurfaceHolder surfaceHolder, boolean newSurface) {
+            mRecordingEnabled = mVideoEncoder.isRecording();
+            if (mRecordingEnabled) {
+                mRecordingStatus = RECORDING_RESUMED;
+            } else {
+                mRecordingStatus = RECORDING_OFF;
+            }
+
             mWindowSurface = new WindowSurface(mEglCore, surfaceHolder.getSurface(), false);
             mWindowSurface.makeCurrent();
 
-            // Create and configure the SurfaceTexture, which will receive frames from the
-            // camera.  We set the textured rect's program to render from it.
-            mTexProgram = new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT);
-            int textureId = mTexProgram.createTextureObject();
-            mPreviewTexture = new SurfaceTexture(textureId);
-            mRect.setTexture(textureId);
+            // Set up the texture blitter that will be used for on-screen display.  This
+            // is *not* applied to the recording, because that uses a separate shader.
+            mFullScreen = new FullFrameRect(
+                    new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT));
 
-            if (!newSurface) {
-                mWindowSurfaceWidth = mWindowSurface.getWidth();
-                mWindowSurfaceHeight = mWindowSurface.getHeight();
-
-                finishSurfaceSetup();
-            }
+            mTextureId = mFullScreen.createTextureObject();
+            mPreviewTexture = new SurfaceTexture(mTextureId);
 
             mMainHandler.sendMessage(mMainHandler.obtainMessage(MainHandler.MSG_SET_SURFACE_TEXTURE, mPreviewTexture));
         }
 
         public void surfaceChanged(int width, int height) {
-            mWindowSurfaceWidth = width;
-            mWindowSurfaceHeight = height;
-            finishSurfaceSetup();
+            GLES20.glViewport(0, 0, width, height);
         }
 
         public void surfaceDestroyed() {
@@ -589,56 +629,6 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
             // before the surface is destroyed.  In theory it could be called though.
             Log.d(TAG, "RenderThread surfaceDestroyed");
             releaseGl();
-        }
-
-        private void finishSurfaceSetup() {
-            int width = mWindowSurfaceWidth;
-            int height = mWindowSurfaceHeight;
-            if (width == 0) {
-                width = 1;
-            }
-            if (height == 0) {
-                height = 1;
-            }
-            Log.d(TAG, "finishSurfaceSetup size=" + width + "x" + height +
-                    " camera=" + mCameraPreviewWidth + "x" + mCameraPreviewHeight);
-
-            // Use full window.
-            GLES20.glViewport(0, 0, width, height);
-
-            // Simple orthographic projection, with (0,0) in lower-left corner.
-            Matrix.orthoM(mDisplayProjectionMatrix, 0, 0, width, 0, height, -1, 1);
-
-            mPosX = width / 2.0f;
-            mPosY = height / 2.0f;
-
-            updateGeometry();
-        }
-
-        /**
-         * Updates the geometry of mRect, based on the size of the window and the current
-         * values set by the UI.
-         */
-        private void updateGeometry() {
-            int width = mWindowSurfaceWidth;
-            int height = mWindowSurfaceHeight;
-
-            int smallDim = Math.min(width, height);
-            // Max scale is a bit larger than the screen, so we can show over-size.
-            float scaled = smallDim * (mSizePercent / 100.0f) * 1f;
-            float cameraAspect = (float) mCameraPreviewWidth / mCameraPreviewHeight;
-            int newWidth = Math.round(scaled * cameraAspect);
-            int newHeight = Math.round(scaled);
-
-            float zoomFactor = 1.0f - (mZoomPercent / 100.0f);
-
-            mRect.setMirror(mMirror);
-            mRect.setScale(newWidth, newHeight);
-            mRect.setPosition(mPosX, mPosY);
-            mRect.setRotation(-mRotate);
-            mRectDrawable.setScale(zoomFactor);
-
-            Logs.i(TAG, "new size:" + newWidth + "*" + newHeight);
         }
 
         public void frameAvailable() {
@@ -652,20 +642,77 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
             mPreviewTexture.updateTexImage();
             GlUtil.checkGlError("draw start");
 
+            // If the recording state is changing, take care of it here.  Ideally we wouldn't
+            // be doing all this in onDrawFrame(), but the EGLContext sharing with GLSurfaceView
+            // makes it hard to do elsewhere.
+            if (mRecordingEnabled) {
+                switch (mRecordingStatus) {
+                    case RECORDING_OFF:
+                        Log.d(TAG, "START recording");
+                        // 开始录制前删除之前的视频文件
+                        String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
+                        mOutputFile = new File(ImageUtils.getVideoPath(), name);
+                        // start recording
+                        mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
+                                mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, EGL14.eglGetCurrentContext()));
+                        mRecordingStatus = RECORDING_ON;
+                        break;
+                    case RECORDING_RESUMED:
+                        Log.d(TAG, "RESUME recording");
+                        mVideoEncoder.updateSharedContext(EGL14.eglGetCurrentContext());
+                        mRecordingStatus = RECORDING_ON;
+                        break;
+                    case RECORDING_ON:
+                        // yay
+                        break;
+                    default:
+                        throw new RuntimeException("unknown status " + mRecordingStatus);
+                }
+            } else {
+                switch (mRecordingStatus) {
+                    case RECORDING_ON:
+                    case RECORDING_RESUMED:
+                        // stop recording
+                        Log.d(TAG, "STOP recording");
+                        mVideoEncoder.stopRecording();
+                        mRecordingStatus = RECORDING_OFF;
+                        break;
+                    case RECORDING_OFF:
+                        // yay
+                        break;
+                    default:
+                        throw new RuntimeException("unknown status " + mRecordingStatus);
+                }
+            }
+
+            //        if (mVideoEncoder.isRecording() && System.currentTimeMillis() - mVideoMillis > 50) {
+            if (mVideoEncoder.isRecording()) {
+                // Set the video encoder's texture name.  We only need to do this once, but in the
+                // current implementation it has to happen after the video encoder is started, so
+                // we just do it here.
+                //
+                // TODO: be less lame.
+                mVideoEncoder.setTextureId(mTextureId);
+
+                // Tell the video encoder thread that a new frame is available.
+                // This will be ignored if we're not actually recording.
+                mVideoEncoder.frameAvailable(mPreviewTexture);
+
+                mVideoMillis = System.currentTimeMillis();
+            }
+
+            if (mCameraPreviewWidth <= 0 || mCameraPreviewHeight <= 0) {
+                return;
+            }
             if (mSizeUpdated) {
+                mFullScreen.getProgram().setTexSize(mCameraPreviewWidth, mCameraPreviewHeight);
                 mSizeUpdated = false;
-                finishSurfaceSetup();
-            }
-            if (mRotateUpdated) {
-                mRotateUpdated = false;
-                finishSurfaceSetup();
             }
 
-            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-            mRect.draw(mTexProgram, mDisplayProjectionMatrix);
+            mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+            mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
+
             mWindowSurface.swapBuffers();
-
             GlUtil.checkGlError("draw done");
         }
 
@@ -673,12 +720,6 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
             mCameraPreviewWidth = width;
             mCameraPreviewHeight = height;
             mSizeUpdated = true;
-        }
-
-        public void setRotate(int rotation, int cameraId) {
-            this.mRotate = rotation;
-            this.mMirror = (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT);
-            mRotateUpdated = true;
         }
 
         /**
@@ -698,13 +739,19 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
                 mPreviewTexture.release();
                 mPreviewTexture = null;
             }
-            if (mTexProgram != null) {
-                mTexProgram.release();
-                mTexProgram = null;
+            if (mFullScreen != null) {
+                mFullScreen.release(false);
+                mFullScreen = null;
             }
             GlUtil.checkGlError("releaseGl done");
 
             mEglCore.makeNothingCurrent();
+        }
+    }
+
+    public void setRecordListener(MediaRecordListener recordListener) {
+        if (mMovieEncoder != null) {
+            mMovieEncoder.setRecordListener(recordListener);
         }
     }
 }
