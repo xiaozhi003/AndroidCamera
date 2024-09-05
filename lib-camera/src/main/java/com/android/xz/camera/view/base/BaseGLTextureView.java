@@ -60,7 +60,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     private int mPreviewHeight;
     private RenderThread mRenderThread;
     private TextureMovieEncoder mMovieEncoder;
-    private boolean mRecordingEnabled;      // controls button state
 
     public BaseGLTextureView(@NonNull Context context) {
         super(context);
@@ -90,7 +89,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     }
 
     public void startRecord() {
-        mRecordingEnabled = true;
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
             if (handler != null) {
@@ -100,7 +98,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     }
 
     public void stopRecord() {
-        mRecordingEnabled = false;
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
             if (handler != null) {
@@ -293,6 +290,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     }
 
     private void closeCamera() {
+        stopRecord();
         mCameraManager.releaseCamera();
     }
 
@@ -609,6 +607,9 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         public void changeRecordingState(boolean isRecording) {
             Log.d(TAG, "changeRecordingState: was " + mRecordingEnabled + " now " + isRecording);
             mRecordingEnabled = isRecording;
+            if (!mRecordingEnabled) {
+                notifyStopRecord();
+            }
         }
 
         public void notifyStopRecord() {

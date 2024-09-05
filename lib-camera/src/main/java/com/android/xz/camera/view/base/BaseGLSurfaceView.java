@@ -171,7 +171,6 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
     public void onPause() {
         super.onPause();
         closeCamera();
-        stopRecord();
     }
 
     @Override
@@ -199,7 +198,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
     }
 
     private void closeCamera() {
-        queueEvent(() -> mRenderer.notifyStopRecord());
+        stopRecord();
         mCameraManager.releaseCamera();
         queueEvent(() -> mRenderer.notifyPausing());
         mSurfaceTexture = null;
@@ -339,6 +338,9 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         public void changeRecordingState(boolean isRecording) {
             Log.d(TAG, "changeRecordingState: was " + mRecordingEnabled + " now " + isRecording);
             mRecordingEnabled = isRecording;
+            if (!mRecordingEnabled) {
+                notifyStopRecord();
+            }
         }
 
         public void notifyStopRecord() {
