@@ -2,8 +2,8 @@ package com.android.xz.camera.view.base;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.opengl.EGL14;
 import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -17,7 +17,7 @@ import androidx.annotation.Nullable;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.encoder.MediaRecordListener;
-import com.android.xz.encoder.TextureMovieEncoder;
+import com.android.xz.encoder.TextureMovieEncoder2;
 import com.android.xz.gles.EglCore;
 import com.android.xz.gles.FullFrameRect;
 import com.android.xz.gles.GlUtil;
@@ -51,7 +51,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
     private int mPreviewWidth;
     private int mPreviewHeight;
     private RenderThread mRenderThread;
-    private TextureMovieEncoder mMovieEncoder;
+    private TextureMovieEncoder2 mMovieEncoder;
 
     public BaseGLTextureView(@NonNull Context context) {
         super(context);
@@ -74,7 +74,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         mCameraManager.setCameraCallback(this);
         setSurfaceTextureListener(this);
         mMainHandler = new MainHandler(this);
-        mMovieEncoder = new TextureMovieEncoder(context);
+        mMovieEncoder = new TextureMovieEncoder2(context);
         mRenderThread = new RenderThread(mMainHandler, mMovieEncoder);
         mRenderThread.start();
         mRenderThread.waitUntilReady();
@@ -538,12 +538,12 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         private boolean mSizeUpdated;
 
         private File mOutputFile;
-        private TextureMovieEncoder mVideoEncoder;
+        private TextureMovieEncoder2 mVideoEncoder;
         private boolean mRecordingEnabled;
         private int mRecordingStatus;
         private long mVideoMillis;
 
-        public RenderThread(MainHandler mainHandler, TextureMovieEncoder textureMovieEncoder) {
+        public RenderThread(MainHandler mainHandler, TextureMovieEncoder2 textureMovieEncoder) {
             super("Renderer Thread");
             mMainHandler = mainHandler;
             mVideoEncoder = textureMovieEncoder;
@@ -564,7 +564,8 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
             }
 
             // Prepare EGL and open the camera before we start handling messages.
-            mEglCore = new EglCore(null, 0);
+            mEglCore = new EglCore(null, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
+            Logs.i(TAG, "Egl version:" + mEglCore.getGlVersion());
 
             Looper.loop();
             mHandler = null;
@@ -587,7 +588,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
         public void notifyStopRecord() {
             if (mVideoEncoder != null && mVideoEncoder.isRecording()) {
-                mVideoEncoder.stopRecording();
+                mVideoEncoder.stopRecord();
                 mRecordingStatus = RECORDING_OFF;
             }
         }
@@ -674,13 +675,12 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                         String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
                         mOutputFile = new File(ImageUtils.getVideoPath(), name);
                         // start recording
-                        mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
-                                mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, EGL14.eglGetCurrentContext()));
+                        mVideoEncoder.startRecord(new TextureMovieEncoder2.EncoderConfig(
+                                mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, mEglCore));
                         mRecordingStatus = RECORDING_ON;
                         break;
                     case RECORDING_RESUMED:
                         Log.d(TAG, "RESUME recording");
-                        mVideoEncoder.updateSharedContext(EGL14.eglGetCurrentContext());
                         mRecordingStatus = RECORDING_ON;
                         break;
                     case RECORDING_ON:
@@ -695,7 +695,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                     case RECORDING_RESUMED:
                         // stop recording
                         Log.d(TAG, "STOP recording");
-                        mVideoEncoder.stopRecording();
+                        mVideoEncoder.stopRecord();
                         mRecordingStatus = RECORDING_OFF;
                         break;
                     case RECORDING_OFF:
@@ -706,22 +706,6 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 }
             }
 
-            //        if (mVideoEncoder.isRecording() && System.currentTimeMillis() - mVideoMillis > 50) {
-            if (mVideoEncoder.isRecording()) {
-                // Set the video encoder's texture name.  We only need to do this once, but in the
-                // current implementation it has to happen after the video encoder is started, so
-                // we just do it here.
-                //
-                // TODO: be less lame.
-                mVideoEncoder.setTextureId(mTextureId);
-
-                // Tell the video encoder thread that a new frame is available.
-                // This will be ignored if we're not actually recording.
-                mVideoEncoder.frameAvailable(mPreviewTexture);
-
-                mVideoMillis = System.currentTimeMillis();
-            }
-
             if (mCameraPreviewWidth <= 0 || mCameraPreviewHeight <= 0) {
                 return;
             }
@@ -730,11 +714,62 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 mSizeUpdated = false;
             }
 
-            mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
-            mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
+            boolean swapResult;
 
-            mWindowSurface.swapBuffers();
-            GlUtil.checkGlError("draw done");
+            if (!mVideoEncoder.isRecording()) { // draw only for screen
+                mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+                mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
+                swapResult = mWindowSurface.swapBuffers();
+            } else {
+                WindowSurface recordWindowSurface = mVideoEncoder.getInputWindowSurface();
+                mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+                mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
+
+                if (recordWindowSurface != null && mEglCore.getGlVersion() >= 3) { // draw blit framebuffer
+                    mVideoEncoder.frameAvailable();
+                    recordWindowSurface.makeCurrentReadFrom(mWindowSurface);
+
+                    GLES30.glBlitFramebuffer(
+                            0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight(),
+                            0, 0, mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight(),
+                            GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST);
+                    int err;
+                    if ((err = GLES30.glGetError()) != GLES30.GL_NO_ERROR) {
+                        Log.w(TAG, "ERROR: glBlitFramebuffer failed: 0x" +
+                                Integer.toHexString(err));
+                    }
+                    recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
+                    recordWindowSurface.swapBuffers();
+
+                    // Now swap the display buffer.
+                    mWindowSurface.makeCurrent();
+                    swapResult = mWindowSurface.swapBuffers();
+                } else if (recordWindowSurface != null) { // draw twice
+                    // Draw for display, swap.
+                    swapResult = mWindowSurface.swapBuffers();
+
+                    // Draw for recording, swap.
+                    mVideoEncoder.frameAvailable();
+                    recordWindowSurface.makeCurrent();
+                    GLES20.glViewport(0, 0,
+                            mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight());
+                    mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
+                    recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
+                    recordWindowSurface.swapBuffers();
+
+                    // Restore
+                    GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
+                    mWindowSurface.makeCurrent();
+                } else {
+                    swapResult = mWindowSurface.swapBuffers();
+                }
+            }
+
+            if (!swapResult) {
+                // This can happen if the Activity stops without waiting for us to halt.
+                Log.w(TAG, "swapBuffers failed, killing renderer thread");
+                shutdown();
+            }
         }
 
         public void setCameraPreviewSize(int width, int height) {

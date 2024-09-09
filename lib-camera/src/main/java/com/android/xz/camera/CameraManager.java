@@ -194,7 +194,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
 
     @Override
     public void addPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
-        if (previewBufferCallback != null) {
+        if (previewBufferCallback != null && !mPreviewBufferCallbacks.contains(previewBufferCallback)) {
             mPreviewBufferCallbacks.add(previewBufferCallback);
         }
     }
