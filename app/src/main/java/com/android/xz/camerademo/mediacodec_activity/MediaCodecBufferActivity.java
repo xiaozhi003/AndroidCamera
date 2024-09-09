@@ -107,7 +107,7 @@ public class MediaCodecBufferActivity extends AppCompatActivity {
 
         @Override
         public void onStopped(String videoPath) {
-            mPictureIv.setImageBitmap(getVideoThumb(videoPath));
+            new VideoTask().executeOnExecutor(Executors.newSingleThreadExecutor(), videoPath);
             mPictureIv.setTag(videoPath);
             mCaptureBtn.stopRecord();
             mTimeTv.setVisibility(View.GONE);
@@ -117,6 +117,21 @@ public class MediaCodecBufferActivity extends AppCompatActivity {
             }
         }
     };
+
+    private class VideoTask extends AsyncTask<String, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(String... strings) {
+            String videoPath = strings[0];
+            return getVideoThumb(videoPath);
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            mPictureIv.setImageBitmap(bitmap);
+        }
+    }
 
     private class ImageSaveTask extends AsyncTask<byte[], Void, Bitmap> {
 

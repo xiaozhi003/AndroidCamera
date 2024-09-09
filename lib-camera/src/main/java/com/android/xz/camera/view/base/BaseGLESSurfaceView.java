@@ -703,8 +703,6 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
                     mVideoEncoder.frameAvailable();
                     recordWindowSurface.makeCurrentReadFrom(mWindowSurface);
 
-                    Log.v(TAG, "glBlitFramebuffer: 0,0," + mWindowSurface.getWidth() + "," +
-                            mWindowSurface.getHeight());
                     GLES30.glBlitFramebuffer(
                             0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight(),
                             0, 0, mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight(),
