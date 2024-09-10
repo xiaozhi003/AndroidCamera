@@ -28,6 +28,8 @@ import android.util.Log;
 import com.android.xz.gles.EglCore;
 import com.android.xz.gles.WindowSurface;
 import com.android.xz.gles.filiter.CameraFilter;
+import com.android.xz.gles.filiter.ScreenFilter;
+import com.android.xz.util.Logs;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,11 +57,11 @@ import java.lang.ref.WeakReference;
  * <li>for each frame, after latching it with SurfaceTexture#updateTexImage(),
  *     call TextureMovieEncoder#frameAvailable().
  * </ul>
- *
+ * <p>
  * TODO: tweak the API (esp. textureId) so it's less awkward for simple use cases.
  */
-public class TextureMovieEncoder extends TextureEncoder implements Runnable {
-    private static final String TAG = TextureMovieEncoder.class.getSimpleName();
+public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
+    private static final String TAG = TextureMovieEncoder1.class.getSimpleName();
     private static final boolean VERBOSE = false;
 
     // ----- accessed exclusively by encoder thread -----
@@ -68,7 +70,8 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
     private CameraFilter mCameraFilter;
     private int mTextureId;
     private int mFrameNum;
-    private VideoEncoderCore mVideoEncoder;
+    private MediaEncoder mEncoder;
+    private MediaMuxerWrapper mMuxerWrapper;
 
     // ----- accessed by multiple threads -----
     private volatile EncoderHandler mHandler;
@@ -76,8 +79,9 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
     private Object mReadyFence = new Object();      // guards ready/running
     private boolean mReady;
     private boolean mRunning;
+    private volatile boolean busy;
 
-    public TextureMovieEncoder(Context context) {
+    public TextureMovieEncoder1(Context context) {
         super(context);
     }
 
@@ -124,6 +128,7 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
      * has completed).
      */
     public void stopRecord() {
+        Logs.v(TAG, "stopRecording");
         mHandler.sendMessage(mHandler.obtainMessage(MSG_STOP_RECORDING));
         mHandler.sendMessage(mHandler.obtainMessage(MSG_QUIT));
         // We don't know when these will actually finish (or even start).  We don't want to
@@ -160,11 +165,9 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
      * stall the caller while this thread does work.
      */
     public void frameAvailable(SurfaceTexture st) {
+        if (busy) return;
         synchronized (mReadyFence) {
             if (!mReady) {
-                return;
-            }
-            if (mHandler.busy) {
                 return;
             }
         }
@@ -193,6 +196,7 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
      * TODO: do something less clumsy
      */
     public void setTextureId(int id) {
+        if (busy) return;
         synchronized (mReadyFence) {
             if (!mReady) {
                 return;
@@ -204,6 +208,7 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
     /**
      * Encoder thread entry point.  Establishes Looper/Handler and waits for messages.
      * <p>
+     *
      * @see Thread#run()
      */
     @Override
@@ -229,24 +234,21 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
      * Handles encoder state change requests.  The handler is created on the encoder thread.
      */
     private static class EncoderHandler extends Handler {
-        private WeakReference<TextureMovieEncoder> mWeakEncoder;
+        private WeakReference<TextureMovieEncoder1> mWeakEncoder;
 
-        private volatile boolean busy;
 
-        public EncoderHandler(TextureMovieEncoder encoder) {
-            mWeakEncoder = new WeakReference<TextureMovieEncoder>(encoder);
+        public EncoderHandler(TextureMovieEncoder1 encoder) {
+            mWeakEncoder = new WeakReference<>(encoder);
         }
 
         @Override  // runs on encoder thread
         public void handleMessage(Message inputMessage) {
-            busy = true;
             int what = inputMessage.what;
             Object obj = inputMessage.obj;
 
-            TextureMovieEncoder encoder = mWeakEncoder.get();
+            TextureMovieEncoder1 encoder = mWeakEncoder.get();
             if (encoder == null) {
                 Log.w(TAG, "EncoderHandler.handleMessage: encoder is null");
-                busy = false;
                 return;
             }
 
@@ -260,9 +262,7 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
                 case MSG_FRAME_AVAILABLE:
                     long timestamp = (((long) inputMessage.arg1) << 32) |
                             (((long) inputMessage.arg2) & 0xffffffffL);
-                    long start = System.currentTimeMillis();
                     encoder.handleFrameAvailable((float[]) obj, timestamp);
-//                    Log.i(TAG, "handleFrameAvailable:" + (System.currentTimeMillis() - start) + "ms");
                     break;
                 case MSG_SET_TEXTURE_ID:
                     encoder.handleSetTexture(inputMessage.arg1);
@@ -274,10 +274,8 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
                     Looper.myLooper().quit();
                     break;
                 default:
-//                    throw new RuntimeException("Unhandled msg what=" + what);
-                    break;
+                    throw new RuntimeException("Unhandled msg what=" + what);
             }
-            busy = false;
         }
     }
 
@@ -297,20 +295,26 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
      * The texture is rendered onto the encoder's input surface, along with a moving
      * box (just because we can).
      * <p>
-     * @param transform The texture transform, from SurfaceTexture.
+     *
+     * @param transform      The texture transform, from SurfaceTexture.
      * @param timestampNanos The frame's timestamp, from SurfaceTexture.
      */
     private void handleFrameAvailable(float[] transform, long timestampNanos) {
         if (VERBOSE) Log.d(TAG, "handleFrameAvailable tr=" + transform);
+        busy = true;
+        if (mEncoder != null) {
+            mEncoder.frameAvailableSoon();
+        }
         long start = System.currentTimeMillis();
-        mVideoEncoder.drainEncoder(false);
-//        mFullScreen.drawFrame(mTextureId, transform);
-
         mCameraFilter.setMatrix(transform);
         mCameraFilter.onDrawFrame(mTextureId);
 
+//        drawBox(mFrameNum++);
+
         mInputWindowSurface.setPresentationTime(timestampNanos);
         mInputWindowSurface.swapBuffers();
+        busy = false;
+        Logs.i(TAG, "frame:" + (System.currentTimeMillis() - start) + "ms");
     }
 
     /**
@@ -318,11 +322,13 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
      */
     private void handleStopRecording() {
         Log.d(TAG, "handleStopRecording");
-        mVideoEncoder.drainEncoder(true);
-        releaseEncoder();
-        if (mRecordListener != null) {
-            mUIHandler.post(() -> mRecordListener.onStopped(mVideoEncoder.getVideoFile().getAbsolutePath()));
+        MediaMuxerWrapper muxerWrapper = mMuxerWrapper;
+        mMuxerWrapper = null;
+        mEncoder = null;
+        if (muxerWrapper != null) {
+            muxerWrapper.stopRecording();
         }
+        releaseEncoder();
     }
 
     /**
@@ -355,23 +361,44 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
 
         // Create new programs and such for the new context.
         mCameraFilter = new CameraFilter(mContext);
-        mCameraFilter.onReady(mVideoEncoder.getWidth(), mVideoEncoder.getHeight());
+        if (mEncoder != null) {
+            MediaSurfaceEncoder mediaSurfaceEncoder = (MediaSurfaceEncoder)mEncoder;
+            mCameraFilter.onReady(mediaSurfaceEncoder.getWidth(), mediaSurfaceEncoder.getHeight());
+        }
     }
 
     private void prepareEncoder(EGLContext sharedContext, int width, int height, int bitRate,
-            File outputFile) {
+                                File outputFile) {
+        MediaSurfaceEncoder mediaSurfaceEncoder;
         try {
-            mVideoEncoder = new VideoEncoderCore(width, height, bitRate, outputFile);
-            mUIHandler.post(() -> {
-                if (mRecordListener != null) {
-                    mRecordListener.onStart();
+            mMuxerWrapper = new MediaMuxerWrapper(".mp4", outputFile);
+            mediaSurfaceEncoder = new MediaSurfaceEncoder(mMuxerWrapper, width, height, new MediaEncoder.MediaEncoderListener() {
+                @Override
+                public void onPrepared(MediaEncoder encoder) {
+                    mEncoder = encoder;
+                    mUIHandler.post(() -> {
+                        if (mRecordListener != null) {
+                            mRecordListener.onStart();
+                        }
+                    });
+                }
+
+                @Override
+                public void onStopped(MediaEncoder encoder) {
+                    mUIHandler.post(() -> {
+                        if (mRecordListener != null) {
+                            mRecordListener.onStopped(encoder.getOutputPath());
+                        }
+                    });
                 }
             });
+            mMuxerWrapper.prepare();
+            mMuxerWrapper.startRecording();
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
         mEglCore = new EglCore(sharedContext, EglCore.FLAG_RECORDABLE);
-        mInputWindowSurface = new WindowSurface(mEglCore, mVideoEncoder.getInputSurface(), true);
+        mInputWindowSurface = new WindowSurface(mEglCore, mediaSurfaceEncoder.getInputSurface(), true);
         mInputWindowSurface.makeCurrent();
 
         mCameraFilter = new CameraFilter(mContext);
@@ -379,7 +406,6 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
     }
 
     private void releaseEncoder() {
-        mVideoEncoder.release();
         if (mInputWindowSurface != null) {
             mInputWindowSurface.release();
             mInputWindowSurface = null;

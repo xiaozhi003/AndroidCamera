@@ -12,13 +12,12 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.xz.camera.CameraManager;
+import com.android.xz.camera.view.CameraGLSurfaceView;
 import com.android.xz.camerademo.MediaDisplayActivity;
 import com.android.xz.camerademo.R;
 import com.android.xz.camerademo.view.CaptureButton;
 import com.android.xz.encoder.MediaRecordListener;
 import com.android.xz.util.ImageUtils;
-import com.android.xz.camera.view.CameraGLSurfaceView;
-import com.android.xz.util.Logs;
 
 import java.util.Timer;
 import java.util.TimerTask;

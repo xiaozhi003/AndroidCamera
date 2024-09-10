@@ -3,6 +3,7 @@ package com.android.xz.camera.view.base;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.os.Message;
@@ -15,9 +16,11 @@ import androidx.annotation.NonNull;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.encoder.MediaRecordListener;
+import com.android.xz.encoder.TextureEncoder;
 import com.android.xz.encoder.TextureMovieEncoder;
-import com.android.xz.gles.FullFrameRect;
-import com.android.xz.gles.Texture2dProgram;
+import com.android.xz.encoder.TextureMovieEncoder1;
+import com.android.xz.gles.OpenGLUtils;
+import com.android.xz.gles.filiter.CameraFilter;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
@@ -51,7 +54,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
     private int mPreviewHeight;
     private CameraSurfaceRenderer mRenderer;
 
-    private TextureMovieEncoder mMovieEncoder;
+    private TextureEncoder mMovieEncoder;
 
     public BaseGLSurfaceView(Context context) {
         super(context);
@@ -71,8 +74,8 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         mCameraManager.setCameraCallback(this);
 
         setEGLContextClientVersion(2);
-        mMovieEncoder = new TextureMovieEncoder(context);
-        mRenderer = new CameraSurfaceRenderer(mCameraHandler, mMovieEncoder);
+        mMovieEncoder = new TextureMovieEncoder1(context);
+        mRenderer = new CameraSurfaceRenderer(mContext, mCameraHandler, mMovieEncoder);
         setRenderer(mRenderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
@@ -302,10 +305,11 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         private static final int RECORDING_ON = 1;
         private static final int RECORDING_RESUMED = 2;
 
+        private Context mContext;
         private CameraHandler mCameraHandler;
 
         private final float[] mSTMatrix = new float[16];
-        private FullFrameRect mFullScreen;
+        private CameraFilter mCameraFilter;
         // width/height of the incoming camera preview frames
         private boolean mSizeUpdated;
         private int mCameraPreviewWidth;
@@ -313,16 +317,16 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         private int mTextureId;
         private SurfaceTexture mSurfaceTexture;
 
-
         private File mOutputFile;
-        private TextureMovieEncoder mVideoEncoder;
+        private TextureEncoder mVideoEncoder;
         private boolean mRecordingEnabled;
         private int mRecordingStatus;
         private long mVideoMillis;
 
-        public CameraSurfaceRenderer(CameraHandler cameraHandler, TextureMovieEncoder textureMovieEncoder) {
+        public CameraSurfaceRenderer(Context context, CameraHandler cameraHandler, TextureEncoder textureEncoder) {
+            mContext = context;
             mCameraHandler = cameraHandler;
-            mVideoEncoder = textureMovieEncoder;
+            mVideoEncoder = textureEncoder;
 
             mTextureId = -1;
 
@@ -345,7 +349,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
 
         public void notifyStopRecord() {
             if (mVideoEncoder != null && mVideoEncoder.isRecording()) {
-                mVideoEncoder.stopRecording();
+                mVideoEncoder.stopRecord();
                 mRecordingStatus = RECORDING_OFF;
             }
         }
@@ -361,9 +365,9 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                 mSurfaceTexture.release();
                 mSurfaceTexture = null;
             }
-            if (mFullScreen != null) {
-                mFullScreen.release(false);     // assume the GLSurfaceView EGL context is about
-                mFullScreen = null;             //  to be destroyed
+            if (mCameraFilter != null) {
+                mCameraFilter.release();     // assume the GLSurfaceView EGL context is about
+                mCameraFilter = null;             //  to be destroyed
             }
             mCameraPreviewWidth = mCameraPreviewHeight = -1;
         }
@@ -383,10 +387,8 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
 
             // Set up the texture blitter that will be used for on-screen display.  This
             // is *not* applied to the recording, because that uses a separate shader.
-            mFullScreen = new FullFrameRect(
-                    new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT));
-
-            mTextureId = mFullScreen.createTextureObject();
+            mCameraFilter = new CameraFilter(mContext);
+            mTextureId = OpenGLUtils.createTextureObject();
 
             // Create a SurfaceTexture, with an external texture, in this EGL context.  We don't
             // have a Looper in this thread -- GLSurfaceView doesn't create one -- so the frame
@@ -399,6 +401,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         @Override
         public void onSurfaceChanged(GL10 gl, int width, int height) {
             gl.glViewport(0, 0, width, height);
+            mCameraFilter.onReady(width, height);
             mCameraHandler.sendMessage(mCameraHandler.obtainMessage(CameraHandler.MSG_SURFACE_CHANGED, width, height));
         }
 
@@ -406,6 +409,14 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         public void onDrawFrame(GL10 gl) {
             if (mSurfaceTexture == null) return;
 
+            // 配置屏幕
+            //清理屏幕 :告诉opengl 需要把屏幕清理成什么颜色
+            GLES20.glClearColor(0, 0, 0, 0);
+            //执行上一个：glClearColor配置的屏幕颜色
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+            // 把摄像头的数据先输出来
+            // 更新纹理，然后我们才能够使用opengl从SurfaceTexure当中获得数据 进行渲染
             mSurfaceTexture.updateTexImage();
 
             // If the recording state is changing, take care of it here.  Ideally we wouldn't
@@ -419,7 +430,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                         String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
                         mOutputFile = new File(ImageUtils.getVideoPath(), name);
                         // start recording
-                        mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
+                        mVideoEncoder.startRecord(new TextureMovieEncoder.EncoderConfig(
                                 mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, EGL14.eglGetCurrentContext()));
                         mRecordingStatus = RECORDING_ON;
                         break;
@@ -440,7 +451,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                     case RECORDING_RESUMED:
                         // stop recording
                         Log.d(TAG, "STOP recording");
-                        mVideoEncoder.stopRecording();
+                        mVideoEncoder.stopRecord();
                         mRecordingStatus = RECORDING_OFF;
                         break;
                     case RECORDING_OFF:
@@ -451,7 +462,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                 }
             }
 
-            //        if (mVideoEncoder.isRecording() && System.currentTimeMillis() - mVideoMillis > 50) {
+//            if (mVideoEncoder.isRecording() && System.currentTimeMillis() - mVideoMillis > 50) {
             if (mVideoEncoder.isRecording()) {
                 // Set the video encoder's texture name.  We only need to do this once, but in the
                 // current implementation it has to happen after the video encoder is started, so
@@ -471,12 +482,12 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                 return;
             }
             if (mSizeUpdated) {
-                mFullScreen.getProgram().setTexSize(mCameraPreviewWidth, mCameraPreviewHeight);
                 mSizeUpdated = false;
             }
 
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
-            mFullScreen.drawFrame(mTextureId, mSTMatrix);
+            mCameraFilter.setMatrix(mSTMatrix);
+            mCameraFilter.onDrawFrame(mTextureId);
         }
 
         public void setCameraPreviewSize(int width, int height) {

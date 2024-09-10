@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.SurfaceHolder;
 import android.view.TextureView;
 
 import androidx.annotation.NonNull;
@@ -23,6 +24,7 @@ import com.android.xz.gles.FullFrameRect;
 import com.android.xz.gles.GlUtil;
 import com.android.xz.gles.Texture2dProgram;
 import com.android.xz.gles.WindowSurface;
+import com.android.xz.gles.filiter.OESFilter;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
@@ -533,7 +535,7 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
         private float[] mDisplayProjectionMatrix = new float[16];
         private EglCore mEglCore;
         private WindowSurface mWindowSurface;
-        private FullFrameRect mFullScreen;
+        private OESFilter mOESFilter;
         private int mCameraPreviewWidth, mCameraPreviewHeight;
         private boolean mSizeUpdated;
 
@@ -633,10 +635,9 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
 
             // Set up the texture blitter that will be used for on-screen display.  This
             // is *not* applied to the recording, because that uses a separate shader.
-            mFullScreen = new FullFrameRect(
-                    new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT));
+            mOESFilter = new OESFilter();
 
-            mTextureId = mFullScreen.createTextureObject();
+            mTextureId = mOESFilter.createTextureObject();
             mPreviewTexture = new SurfaceTexture(mTextureId);
 
             mMainHandler.sendMessage(mMainHandler.obtainMessage(MainHandler.MSG_SET_SURFACE_TEXTURE, mPreviewTexture));
@@ -710,59 +711,15 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 return;
             }
             if (mSizeUpdated) {
-                mFullScreen.getProgram().setTexSize(mCameraPreviewWidth, mCameraPreviewHeight);
+                mOESFilter.setTexSize(mCameraPreviewWidth, mCameraPreviewHeight);
                 mSizeUpdated = false;
             }
 
             boolean swapResult;
-
-            if (!mVideoEncoder.isRecording()) { // draw only for screen
-                mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
-                mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
-                swapResult = mWindowSurface.swapBuffers();
+            if (!mVideoEncoder.isRecording()) {
+                swapResult = drawScreen();
             } else {
-                WindowSurface recordWindowSurface = mVideoEncoder.getInputWindowSurface();
-                mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
-                mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
-
-                if (recordWindowSurface != null && mEglCore.getGlVersion() >= 3) { // draw blit framebuffer
-                    mVideoEncoder.frameAvailable();
-                    recordWindowSurface.makeCurrentReadFrom(mWindowSurface);
-
-                    GLES30.glBlitFramebuffer(
-                            0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight(),
-                            0, 0, mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight(),
-                            GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST);
-                    int err;
-                    if ((err = GLES30.glGetError()) != GLES30.GL_NO_ERROR) {
-                        Log.w(TAG, "ERROR: glBlitFramebuffer failed: 0x" +
-                                Integer.toHexString(err));
-                    }
-                    recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
-                    recordWindowSurface.swapBuffers();
-
-                    // Now swap the display buffer.
-                    mWindowSurface.makeCurrent();
-                    swapResult = mWindowSurface.swapBuffers();
-                } else if (recordWindowSurface != null) { // draw twice
-                    // Draw for display, swap.
-                    swapResult = mWindowSurface.swapBuffers();
-
-                    // Draw for recording, swap.
-                    mVideoEncoder.frameAvailable();
-                    recordWindowSurface.makeCurrent();
-                    GLES20.glViewport(0, 0,
-                            mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight());
-                    mFullScreen.drawFrame(mTextureId, mDisplayProjectionMatrix);
-                    recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
-                    recordWindowSurface.swapBuffers();
-
-                    // Restore
-                    GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
-                    mWindowSurface.makeCurrent();
-                } else {
-                    swapResult = mWindowSurface.swapBuffers();
-                }
+                swapResult = drawRecord();
             }
 
             if (!swapResult) {
@@ -770,6 +727,65 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 Log.w(TAG, "swapBuffers failed, killing renderer thread");
                 shutdown();
             }
+        }
+
+        /**
+         * 绘制到屏幕Surface中，用来在界面上显示
+         */
+        private boolean drawScreen() {
+            mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+            mOESFilter.drawFrame(mTextureId, mDisplayProjectionMatrix);
+            return mWindowSurface.swapBuffers();
+        }
+
+        /**
+         * 绘制到视频Surface中，用来录制视频
+         */
+        private boolean drawRecord() {
+            boolean swapResult;
+            WindowSurface recordWindowSurface = mVideoEncoder.getInputWindowSurface();
+            mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+            mOESFilter.drawFrame(mTextureId, mDisplayProjectionMatrix);
+
+            if (recordWindowSurface != null && mEglCore.getGlVersion() >= 3) { // draw blit framebuffer
+                mVideoEncoder.frameAvailable();
+                recordWindowSurface.makeCurrentReadFrom(mWindowSurface);
+
+                GLES30.glBlitFramebuffer(
+                        0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight(),
+                        0, 0, mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight(),
+                        GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST);
+                int err;
+                if ((err = GLES30.glGetError()) != GLES30.GL_NO_ERROR) {
+                    Log.w(TAG, "ERROR: glBlitFramebuffer failed: 0x" +
+                            Integer.toHexString(err));
+                }
+                recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
+                recordWindowSurface.swapBuffers();
+
+                // Now swap the display buffer.
+                mWindowSurface.makeCurrent();
+                swapResult = mWindowSurface.swapBuffers();
+            } else if (recordWindowSurface != null) { // draw twice
+                // Draw for display, swap.
+                swapResult = mWindowSurface.swapBuffers();
+
+                // Draw for recording, swap.
+                mVideoEncoder.frameAvailable();
+                recordWindowSurface.makeCurrent();
+                GLES20.glViewport(0, 0,
+                        mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight());
+                mOESFilter.drawFrame(mTextureId, mDisplayProjectionMatrix);
+                recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
+                recordWindowSurface.swapBuffers();
+
+                // Restore
+                GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
+                mWindowSurface.makeCurrent();
+            } else {
+                swapResult = mWindowSurface.swapBuffers();
+            }
+            return swapResult;
         }
 
         public void setCameraPreviewSize(int width, int height) {
@@ -795,9 +811,9 @@ public abstract class BaseGLTextureView extends TextureView implements TextureVi
                 mPreviewTexture.release();
                 mPreviewTexture = null;
             }
-            if (mFullScreen != null) {
-                mFullScreen.release(false);
-                mFullScreen = null;
+            if (mOESFilter != null) {
+                mOESFilter.release();
+                mOESFilter = null;
             }
             GlUtil.checkGlError("releaseGl done");
 

@@ -42,7 +42,7 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
     // parameters for recording
     private final int mWidth, mHeight;
     private static final int FRAME_RATE = 15;
-    private static final float BPP = 0.50f;
+    private static final float BPP = 0.25f;
 
     private Surface mSurface;
 
@@ -51,6 +51,14 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
         if (DEBUG) Log.i(TAG, "MediaVideoEncoder: ");
         mWidth = width;
         mHeight = height;
+    }
+
+    public int getWidth() {
+        return mWidth;
+    }
+
+    public int getHeight() {
+        return mHeight;
     }
 
     /**
