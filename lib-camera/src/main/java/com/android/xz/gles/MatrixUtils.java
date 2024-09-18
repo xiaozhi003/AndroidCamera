@@ -13,8 +13,8 @@ import android.opengl.Matrix;
 /**
  * Description:
  */
-public enum MatrixUtils {
-    ;
+public class MatrixUtils {
+
     public static final int TYPE_FITXY = 0;
     public static final int TYPE_CENTERCROP = 1;
     public static final int TYPE_CENTERINSIDE = 2;

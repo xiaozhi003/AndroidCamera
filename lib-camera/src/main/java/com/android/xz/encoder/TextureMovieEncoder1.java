@@ -28,7 +28,6 @@ import android.util.Log;
 import com.android.xz.gles.EglCore;
 import com.android.xz.gles.WindowSurface;
 import com.android.xz.gles.filiter.CameraFilter;
-import com.android.xz.gles.filiter.ScreenFilter;
 import com.android.xz.util.Logs;
 
 import java.io.File;
@@ -83,6 +82,7 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
 
     public TextureMovieEncoder1(Context context) {
         super(context);
+        mCameraFilter = new CameraFilter();
     }
 
     public void setRecordListener(MediaRecordListener recordListener) {
@@ -306,8 +306,7 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
             mEncoder.frameAvailableSoon();
         }
         long start = System.currentTimeMillis();
-        mCameraFilter.setMatrix(transform);
-        mCameraFilter.onDrawFrame(mTextureId);
+        mCameraFilter.draw(mTextureId, transform);
 
 //        drawBox(mFrameNum++);
 
@@ -360,10 +359,10 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
         mInputWindowSurface.makeCurrent();
 
         // Create new programs and such for the new context.
-        mCameraFilter = new CameraFilter(mContext);
+        mCameraFilter.surfaceCreated();
         if (mEncoder != null) {
             MediaSurfaceEncoder mediaSurfaceEncoder = (MediaSurfaceEncoder)mEncoder;
-            mCameraFilter.onReady(mediaSurfaceEncoder.getWidth(), mediaSurfaceEncoder.getHeight());
+            mCameraFilter.surfaceChanged(mediaSurfaceEncoder.getWidth(), mediaSurfaceEncoder.getHeight());
         }
     }
 
@@ -401,8 +400,8 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
         mInputWindowSurface = new WindowSurface(mEglCore, mediaSurfaceEncoder.getInputSurface(), true);
         mInputWindowSurface.makeCurrent();
 
-        mCameraFilter = new CameraFilter(mContext);
-        mCameraFilter.onReady(width, height);
+        mCameraFilter.surfaceCreated();
+        mCameraFilter.surfaceChanged(width, height);
     }
 
     private void releaseEncoder() {
@@ -412,7 +411,6 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
         }
         if (mCameraFilter != null) {
             mCameraFilter.release();
-            mCameraFilter = null;
         }
         if (mEglCore != null) {
             mEglCore.release();

@@ -32,7 +32,7 @@ import android.view.Surface;
  * The EGLContext must only be attached to one thread at a time.  This class is not thread-safe.
  */
 public final class EglCore {
-    private static final String TAG = GlUtil.TAG;
+    private static final String TAG = EglCore.class.getSimpleName();
 
     /**
      * Constructor flag: surface must be recordable.  This discourages EGL from using a

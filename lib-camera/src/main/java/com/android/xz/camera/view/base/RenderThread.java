@@ -11,8 +11,7 @@ import android.view.SurfaceHolder;
 
 import com.android.xz.encoder.TextureMovieEncoder2;
 import com.android.xz.gles.EglCore;
-import com.android.xz.gles.GlUtil;
-import com.android.xz.gles.OpenGLUtils;
+import com.android.xz.gles.GLESUtils;
 import com.android.xz.gles.WindowSurface;
 import com.android.xz.gles.filiter.CameraFilter;
 import com.android.xz.util.ImageUtils;
@@ -58,6 +57,7 @@ public class RenderThread extends Thread {
         mMainHandler = new Handler(mContext.getMainLooper());
         mVideoEncoder = textureMovieEncoder;
         mSizeUpdated = false;
+        mCameraFilter = new CameraFilter();
     }
 
     @Override
@@ -147,10 +147,10 @@ public class RenderThread extends Thread {
 
         // Set up the texture blitter that will be used for on-screen display.  This
         // is *not* applied to the recording, because that uses a separate shader.
-        mCameraFilter = new CameraFilter(mContext);
 
-        mTextureId = OpenGLUtils.createTextureObject();
+        mTextureId = GLESUtils.createOESTexture();
         mPreviewTexture = new SurfaceTexture(mTextureId);
+        mCameraFilter.surfaceCreated();
 
 //        mMainHandler.sendMessage(mMainHandler.obtainMessage(MainHandler.MSG_SET_SURFACE_TEXTURE, mPreviewTexture));
         mMainHandler.post(() -> {
@@ -162,7 +162,7 @@ public class RenderThread extends Thread {
 
     public void surfaceChanged(int width, int height) {
         GLES20.glViewport(0, 0, width, height);
-        mCameraFilter.onReady(width, height);
+        mCameraFilter.surfaceChanged(width, height);
     }
 
     public void surfaceDestroyed() {
@@ -181,7 +181,7 @@ public class RenderThread extends Thread {
         if (mWindowSurface == null) return;
 
         mPreviewTexture.updateTexImage();
-        GlUtil.checkGlError("draw start");
+        GLESUtils.checkGlError("draw start");
 
         // If the recording state is changing, take care of it here.  Ideally we wouldn't
         // be doing all this in onDrawFrame(), but the EGLContext sharing with GLSurfaceView
@@ -251,8 +251,7 @@ public class RenderThread extends Thread {
      */
     private boolean drawScreen() {
         mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
-        mCameraFilter.setMatrix(mDisplayProjectionMatrix);
-        mCameraFilter.onDrawFrame(mTextureId);
+        mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
         return mWindowSurface.swapBuffers();
     }
 
@@ -283,8 +282,7 @@ public class RenderThread extends Thread {
         boolean swapResult;
         // 先绘制到屏幕上
         mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
-        mCameraFilter.setMatrix(mDisplayProjectionMatrix);
-        mCameraFilter.onDrawFrame(mTextureId);
+        mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
 
         mVideoEncoder.frameAvailable();
         // 把屏幕Surface渲染数据拷贝到视频Surface中
@@ -318,8 +316,7 @@ public class RenderThread extends Thread {
         boolean swapResult;
         // 先绘制到屏幕上
         mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
-        mCameraFilter.setMatrix(mDisplayProjectionMatrix);
-        mCameraFilter.onDrawFrame(mTextureId);
+        mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
         swapResult = mWindowSurface.swapBuffers();
 
         // 再绘制到视频Surface中
@@ -327,8 +324,7 @@ public class RenderThread extends Thread {
         recordWindowSurface.makeCurrent();
         GLES20.glViewport(0, 0,
                 mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight());
-        mCameraFilter.setMatrix(mDisplayProjectionMatrix);
-        mCameraFilter.onDrawFrame(mTextureId);
+        mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
         recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
         recordWindowSurface.swapBuffers();
 
@@ -351,7 +347,7 @@ public class RenderThread extends Thread {
      * Does not release EglCore.
      */
     private void releaseGl() {
-        GlUtil.checkGlError("releaseGl start");
+        GLESUtils.checkGlError("releaseGl start");
 
         if (mWindowSurface != null) {
             mWindowSurface.release();
@@ -363,9 +359,8 @@ public class RenderThread extends Thread {
         }
         if (mCameraFilter != null) {
             mCameraFilter.release();
-            mCameraFilter = null;
         }
-        GlUtil.checkGlError("releaseGl done");
+        GLESUtils.checkGlError("releaseGl done");
 
         mEglCore.makeNothingCurrent();
     }

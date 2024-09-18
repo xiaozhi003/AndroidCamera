@@ -19,7 +19,7 @@ import com.android.xz.encoder.MediaRecordListener;
 import com.android.xz.encoder.TextureEncoder;
 import com.android.xz.encoder.TextureMovieEncoder;
 import com.android.xz.encoder.TextureMovieEncoder1;
-import com.android.xz.gles.OpenGLUtils;
+import com.android.xz.gles.GLESUtils;
 import com.android.xz.gles.filiter.CameraFilter;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
@@ -308,7 +308,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         private Context mContext;
         private CameraHandler mCameraHandler;
 
-        private final float[] mSTMatrix = new float[16];
+        private final float[] mDisplayProjectionMatrix = new float[16];
         private CameraFilter mCameraFilter;
         // width/height of the incoming camera preview frames
         private boolean mSizeUpdated;
@@ -316,7 +316,6 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         private int mCameraPreviewHeight;
         private int mTextureId;
         private SurfaceTexture mSurfaceTexture;
-
         private File mOutputFile;
         private TextureEncoder mVideoEncoder;
         private boolean mRecordingEnabled;
@@ -334,6 +333,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
             mRecordingEnabled = false;
             mSizeUpdated = false;
             mCameraPreviewWidth = mCameraPreviewHeight = -1;
+            mCameraFilter = new CameraFilter();
         }
 
         /**
@@ -367,7 +367,6 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
             }
             if (mCameraFilter != null) {
                 mCameraFilter.release();     // assume the GLSurfaceView EGL context is about
-                mCameraFilter = null;             //  to be destroyed
             }
             mCameraPreviewWidth = mCameraPreviewHeight = -1;
         }
@@ -387,8 +386,8 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
 
             // Set up the texture blitter that will be used for on-screen display.  This
             // is *not* applied to the recording, because that uses a separate shader.
-            mCameraFilter = new CameraFilter(mContext);
-            mTextureId = OpenGLUtils.createTextureObject();
+            mTextureId = GLESUtils.createOESTexture();
+            mCameraFilter.surfaceCreated();
 
             // Create a SurfaceTexture, with an external texture, in this EGL context.  We don't
             // have a Looper in this thread -- GLSurfaceView doesn't create one -- so the frame
@@ -401,7 +400,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         @Override
         public void onSurfaceChanged(GL10 gl, int width, int height) {
             gl.glViewport(0, 0, width, height);
-            mCameraFilter.onReady(width, height);
+            mCameraFilter.surfaceChanged(width, height);
             mCameraHandler.sendMessage(mCameraHandler.obtainMessage(CameraHandler.MSG_SURFACE_CHANGED, width, height));
         }
 
@@ -485,9 +484,8 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                 mSizeUpdated = false;
             }
 
-            mSurfaceTexture.getTransformMatrix(mSTMatrix);
-            mCameraFilter.setMatrix(mSTMatrix);
-            mCameraFilter.onDrawFrame(mTextureId);
+            mSurfaceTexture.getTransformMatrix(mDisplayProjectionMatrix);
+            mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
         }
 
         public void setCameraPreviewSize(int width, int height) {

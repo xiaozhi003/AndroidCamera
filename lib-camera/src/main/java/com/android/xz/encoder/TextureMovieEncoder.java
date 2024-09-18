@@ -79,6 +79,7 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
 
     public TextureMovieEncoder(Context context) {
         super(context);
+        mCameraFilter = new CameraFilter();
     }
 
     public void setRecordListener(MediaRecordListener recordListener) {
@@ -306,8 +307,7 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
         mVideoEncoder.drainEncoder(false);
 //        mFullScreen.drawFrame(mTextureId, transform);
 
-        mCameraFilter.setMatrix(transform);
-        mCameraFilter.onDrawFrame(mTextureId);
+        mCameraFilter.draw(mTextureId, transform);
 
         mInputWindowSurface.setPresentationTime(timestampNanos);
         mInputWindowSurface.swapBuffers();
@@ -354,8 +354,8 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
         mInputWindowSurface.makeCurrent();
 
         // Create new programs and such for the new context.
-        mCameraFilter = new CameraFilter(mContext);
-        mCameraFilter.onReady(mVideoEncoder.getWidth(), mVideoEncoder.getHeight());
+        mCameraFilter.surfaceCreated();
+        mCameraFilter.surfaceChanged(mVideoEncoder.getWidth(), mVideoEncoder.getHeight());
     }
 
     private void prepareEncoder(EGLContext sharedContext, int width, int height, int bitRate,
@@ -374,8 +374,8 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
         mInputWindowSurface = new WindowSurface(mEglCore, mVideoEncoder.getInputSurface(), true);
         mInputWindowSurface.makeCurrent();
 
-        mCameraFilter = new CameraFilter(mContext);
-        mCameraFilter.onReady(width, height);
+        mCameraFilter.surfaceCreated();
+        mCameraFilter.surfaceChanged(width, height);
     }
 
     private void releaseEncoder() {
@@ -386,7 +386,6 @@ public class TextureMovieEncoder extends TextureEncoder implements Runnable {
         }
         if (mCameraFilter != null) {
             mCameraFilter.release();
-            mCameraFilter = null;
         }
         if (mEglCore != null) {
             mEglCore.release();

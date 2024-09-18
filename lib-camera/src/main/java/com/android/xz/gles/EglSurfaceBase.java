@@ -35,7 +35,7 @@ import java.nio.ByteOrder;
  * There can be multiple surfaces associated with a single context.
  */
 public class EglSurfaceBase {
-    protected static final String TAG = GlUtil.TAG;
+    protected static final String TAG = EglSurfaceBase.class.getSimpleName();
 
     // EglCore object we're associated with.  It may be associated with multiple surfaces.
     protected EglCore mEglCore;
@@ -179,7 +179,7 @@ public class EglSurfaceBase {
         buf.order(ByteOrder.LITTLE_ENDIAN);
         GLES20.glReadPixels(0, 0, width, height,
                 GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
-        GlUtil.checkGlError("glReadPixels");
+        GLESUtils.checkGlError("glReadPixels");
         buf.rewind();
 
         BufferedOutputStream bos = null;
