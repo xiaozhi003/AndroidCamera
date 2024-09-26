@@ -243,6 +243,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
     }
 
     private void closeCamera() {
+        stopRecord();
         mCameraManager.releaseCamera();
     }
 
