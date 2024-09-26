@@ -20,6 +20,23 @@
 
 每个包都可独立使用，耦合度低，方便白嫖：）
 
+## 预览视图
+
+| 类名                       | 功能说明                                                     |
+| -------------------------- | ------------------------------------------------------------ |
+| CameraSurfaceView          | 1.SurfaceView+Camera预览<br>2.包含MediaCodec+Buffer录制视频  |
+| CameraTextureView          | TextureView+Camera                                           |
+| CameraGLSurfaceView        | 1.GLSurfaceView+Camera<br>2.MediaCodec+Surface录制视频，多线程共享EGL方式 |
+| CameraGLSurfaceHolderView  | 1.SurfaceView+OpenGL ES+Camera<br>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
+| CameraGLTextureView        | 1.TextureView+OpenGL ES+Camera<br/>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
+| Camera2SurfaceView         | SurfaceView+Camera2                                          |
+| Camera2TextureView         | TextureView+Camera2                                          |
+| Camera2GLSurfaceView       | 1.GLSurfaceView+Camera2<br/>2.MediaCodec+Surface录制视频，多线程共享EGL方式 |
+| Camera2GLSurfaceHolderView | 1.SurfaceView+OpenGL ES+Camera2<br/>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
+| Camera2GLTextureView       | 1.TextureView+OpenGL ES+Camera2<br/>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
+
+
+
 ## FAQ
 
 ### 1.如何切换预览尺寸
@@ -41,6 +58,8 @@
 [Android Camera系列（一）：SurfaceView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141472537)
 
 [Android Camera系列（二）：TextureView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141855031)
+
+[Android Camera系列（三）：GLSurfaceView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141860162)
 
 
 

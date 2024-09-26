@@ -1,6 +1,7 @@
 package com.android.xz.camera.view.base;
 
 import android.content.Context;
+import android.graphics.Camera;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
@@ -14,6 +15,7 @@ import com.android.xz.gles.EglCore;
 import com.android.xz.gles.GLESUtils;
 import com.android.xz.gles.WindowSurface;
 import com.android.xz.gles.filiter.CameraFilter;
+import com.android.xz.gles.filiter.ScreenFilter;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
@@ -21,7 +23,7 @@ import java.io.File;
 import java.util.Date;
 
 public class RenderThread extends Thread {
-    
+
     private static final String TAG = RenderThread.class.getSimpleName();
     private static final int RECORDING_OFF = 0;
     private static final int RECORDING_ON = 1;
@@ -42,6 +44,8 @@ public class RenderThread extends Thread {
     private EglCore mEglCore;
     private WindowSurface mWindowSurface;
     private CameraFilter mCameraFilter;
+    private CameraFilter mFBOFilter;
+    private ScreenFilter mScreenFilter;
     private int mCameraPreviewWidth, mCameraPreviewHeight;
     private boolean mSizeUpdated;
 
@@ -58,6 +62,9 @@ public class RenderThread extends Thread {
         mVideoEncoder = textureMovieEncoder;
         mSizeUpdated = false;
         mCameraFilter = new CameraFilter();
+        mFBOFilter = new CameraFilter();
+        mFBOFilter.setFBO(true);
+        mScreenFilter = new ScreenFilter();
     }
 
     @Override
@@ -151,8 +158,9 @@ public class RenderThread extends Thread {
         mTextureId = GLESUtils.createOESTexture();
         mPreviewTexture = new SurfaceTexture(mTextureId);
         mCameraFilter.surfaceCreated();
+        mFBOFilter.surfaceCreated();
+        mScreenFilter.surfaceCreated();
 
-//        mMainHandler.sendMessage(mMainHandler.obtainMessage(MainHandler.MSG_SET_SURFACE_TEXTURE, mPreviewTexture));
         mMainHandler.post(() -> {
             if (mGLSurfaceTextureCallback != null) {
                 mGLSurfaceTextureCallback.onGLSurfaceCreated(mPreviewTexture);
@@ -161,8 +169,9 @@ public class RenderThread extends Thread {
     }
 
     public void surfaceChanged(int width, int height) {
-        GLES20.glViewport(0, 0, width, height);
         mCameraFilter.surfaceChanged(width, height);
+        mFBOFilter.surfaceChanged(width, height);
+        mScreenFilter.surfaceChanged(width, height);
     }
 
     public void surfaceDestroyed() {
@@ -264,8 +273,10 @@ public class RenderThread extends Thread {
 
         if (recordWindowSurface != null && mEglCore.getGlVersion() >= 3) { // draw blit framebuffer
             swapResult = drawBlitFrameBuffer(recordWindowSurface);
-        } else if (recordWindowSurface != null) { // draw twice
+        } else if (recordWindowSurface != null) { // draw twice or draw FBO
+            // 两种方式任选其一
             swapResult = drawTwice(recordWindowSurface);
+//            swapResult = drawFBO(recordWindowSurface);
         } else {
             swapResult = drawScreen();
         }
@@ -334,6 +345,37 @@ public class RenderThread extends Thread {
         return swapResult;
     }
 
+
+    /**
+     * 离屏渲染
+     *
+     * @param recordWindowSurface
+     * @return
+     */
+    private boolean drawFBO(WindowSurface recordWindowSurface) {
+        boolean swapResult;
+        // 将数据绘制到FBO Buffer中
+        mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+        int fboId = mFBOFilter.draw(mTextureId, mDisplayProjectionMatrix);
+
+        // 将离屏FrameBuffer绘制到视频Surface中
+        mVideoEncoder.frameAvailable();
+        recordWindowSurface.makeCurrent();
+        GLES20.glViewport(0, 0,
+                mVideoEncoder.getVideoWidth(), mVideoEncoder.getVideoHeight());
+        mScreenFilter.draw(fboId, mDisplayProjectionMatrix);
+        recordWindowSurface.setPresentationTime(mPreviewTexture.getTimestamp());
+        recordWindowSurface.swapBuffers();
+
+        // 将离屏FrameBuffer绘制到屏幕Surface中
+        mWindowSurface.makeCurrent();
+        GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
+        mScreenFilter.draw(fboId, mDisplayProjectionMatrix);
+        swapResult = mWindowSurface.swapBuffers();
+
+        return swapResult;
+    }
+
     public void setCameraPreviewSize(int width, int height) {
         mCameraPreviewWidth = width;
         mCameraPreviewHeight = height;
@@ -359,6 +401,12 @@ public class RenderThread extends Thread {
         }
         if (mCameraFilter != null) {
             mCameraFilter.release();
+        }
+        if (mFBOFilter != null) {
+            mFBOFilter.release();
+        }
+        if (mScreenFilter != null) {
+            mScreenFilter.release();
         }
         GLESUtils.checkGlError("releaseGl done");
 
