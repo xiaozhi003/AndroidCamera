@@ -17,7 +17,6 @@ import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.encoder.MediaRecordListener;
 import com.android.xz.encoder.TextureEncoder;
-import com.android.xz.encoder.TextureMovieEncoder;
 import com.android.xz.encoder.TextureMovieEncoder1;
 import com.android.xz.gles.GLESUtils;
 import com.android.xz.gles.filiter.CameraFilter;
@@ -429,7 +428,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
                         String name = "VID_" + ImageUtils.DATE_FORMAT.format(new Date(System.currentTimeMillis())) + ".mp4";
                         mOutputFile = new File(ImageUtils.getVideoPath(), name);
                         // start recording
-                        mVideoEncoder.startRecord(new TextureMovieEncoder.EncoderConfig(
+                        mVideoEncoder.startRecord(new TextureEncoder.EncoderConfig(
                                 mOutputFile, mCameraPreviewHeight, mCameraPreviewWidth, mCameraPreviewWidth * mCameraPreviewHeight * 10, EGL14.eglGetCurrentContext()));
                         mRecordingStatus = RECORDING_ON;
                         break;

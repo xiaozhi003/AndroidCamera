@@ -31,39 +31,14 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 /**
- * Encode a movie from frames rendered from an external texture image.
- * <p>
- * The object wraps an encoder running on a dedicated thread.  The various control messages
- * may be sent from arbitrary threads (typically the app UI thread).  The encoder thread
- * manages both sides of the encoder (feeding and draining); the only external input is
- * the GL texture.
- * <p>
- * The design is complicated slightly by the need to create an EGL context that shares state
- * with a view that gets restarted if (say) the device orientation changes.  When the view
- * in question is a GLSurfaceView, we don't have full control over the EGL context creation
- * on that side, so we have to bend a bit backwards here.
- * <p>
- * To use:
- * <ul>
- * <li>create TextureMovieEncoder object
- * <li>create an EncoderConfig
- * <li>call TextureMovieEncoder#startRecording() with the config
- * <li>call TextureMovieEncoder#setTextureId() with the texture object that receives frames
- * <li>for each frame, after latching it with SurfaceTexture#updateTexImage(),
- *     call TextureMovieEncoder#frameAvailable().
- * </ul>
- * <p>
- * TODO: tweak the API (esp. textureId) so it's less awkward for simple use cases.
+ * 该编码器主要用来获取MediaCodec创建的Surface
+ * Renderer线程将纹理刷新到该Surface中进行视频编码
  */
 public class TextureMovieEncoder2 implements Runnable {
     private static final String TAG = TextureMovieEncoder2.class.getSimpleName();
-    private static final boolean VERBOSE = false;
 
     private static final int MSG_START_RECORDING = 0;
     private static final int MSG_STOP_RECORDING = 1;
-    private static final int MSG_FRAME_AVAILABLE = 2;
-    private static final int MSG_SET_TEXTURE_ID = 3;
-    private static final int MSG_UPDATE_SHARED_CONTEXT = 4;
     private static final int MSG_QUIT = 5;
 
     private Object mSync = new Object();
@@ -74,8 +49,6 @@ public class TextureMovieEncoder2 implements Runnable {
     private MediaEncoder mEncoder;
     private MediaMuxerWrapper mMuxerWrapper;
 
-    // ----- accessed by multiple threads -----
-    // ----- accessed by multiple threads -----
     private volatile EncoderHandler mHandler;
 
     private Object mReadyFence = new Object();      // guards ready/running
@@ -95,16 +68,6 @@ public class TextureMovieEncoder2 implements Runnable {
         mUIHandler = new Handler(mContext.getMainLooper());
     }
 
-    /**
-     * Encoder configuration.
-     * <p>
-     * Object is immutable, which means we can safely pass it between threads without
-     * explicit synchronization (and don't need to worry about it getting tweaked out from
-     * under us).
-     * <p>
-     * TODO: make frame rate and iframe interval configurable?  Maybe use builder pattern
-     *       with reasonable defaults for those and bit rate.
-     */
     public static class EncoderConfig {
         final File mOutputFile;
         final int mWidth;
