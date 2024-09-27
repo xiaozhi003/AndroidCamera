@@ -20,22 +20,58 @@
 
 每个包都可独立使用，耦合度低，方便白嫖：）
 
+
+
 ## 预览视图
 
-| 类名                       | 功能说明                                                     |
-| -------------------------- | ------------------------------------------------------------ |
-| CameraSurfaceView          | 1.SurfaceView+Camera预览<br>2.包含MediaCodec+Buffer录制视频  |
-| CameraTextureView          | TextureView+Camera                                           |
-| CameraGLSurfaceView        | 1.GLSurfaceView+Camera<br>2.MediaCodec+Surface录制视频，多线程共享EGL方式 |
-| CameraGLSurfaceHolderView  | 1.SurfaceView+OpenGL ES+Camera<br>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
-| CameraGLTextureView        | 1.TextureView+OpenGL ES+Camera<br/>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
-| Camera2SurfaceView         | SurfaceView+Camera2                                          |
-| Camera2TextureView         | TextureView+Camera2                                          |
-| Camera2GLSurfaceView       | 1.GLSurfaceView+Camera2<br/>2.MediaCodec+Surface录制视频，多线程共享EGL方式 |
-| Camera2GLSurfaceHolderView | 1.SurfaceView+OpenGL ES+Camera2<br/>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
-| Camera2GLTextureView       | 1.TextureView+OpenGL ES+Camera2<br/>2.MediaCodec+Surface录制视频，三种绘制方式：**Draw Twice**、**Draw FBO**、**Draw Blit framebuffer** |
-
-
+<table>
+  <thead>
+  	<th>类名</th>
+    <th>功能说明</th>
+	</thead>
+  <tbody>
+    <tr>
+      <td>CameraSurfaceView</td>
+      <td>1.SurfaceView+Camera<br>2.包含MediaCodec+Buffer录制视频</td>
+    </tr>
+    <tr>
+      <td>CameraTextureView</td>
+      <td>TextureView+Camera</td>
+    </tr>
+    <tr>
+      <td>CameraGLSurfaceView</td>
+      <td>1.GLSurfaceView+Camera<br>2.MediaCodec+Surface录制视频，多线程共享EGL方式</td>
+    </tr>
+    <tr>
+      <td>CameraGLSurfaceHolderView</td>
+      <td>1.SurfaceView+OpenGL ES+Camera<br>2.MediaCodec+Surface录制视频，三种渲染方式：<ul><li><b>Draw Twice</b></li><li><b>Draw FBO</b></li> <li><b>Draw Blit framebuffer</b></li></ul></td>
+    </tr>
+    <tr>
+      <td>CameraGLTextureView</td>
+      <td>1.TextureView+OpenGL ES+Camera<br/>2.MediaCodec+Surface录制视频，三种渲染方式：<ul><li><b>Draw Twice</b></li><li><b>Draw FBO</b></li> <li><b>Draw Blit framebuffer</b></li></ul></td>
+    </tr>
+    <tr>
+      <td>Camera2SurfaceView</td>
+      <td>SurfaceView+Camera2</td>
+    </tr>
+    <tr>
+      <td>Camera2TextureView</td>
+      <td>TextureView+Camera2</td>
+    </tr>
+    <tr>
+      <td>Camera2GLSurfaceView</td>
+      <td>1.GLSurfaceView+Camera2<br/>2.MediaCodec+Surface录制视频，多线程共享EGL方式</td>
+    </tr>
+    <tr>
+      <td>Camera2GLSurfaceHolderView</td>
+      <td>1.SurfaceView+OpenGL ES+Camera2<br/>2.MediaCodec+Surface录制视频，三种渲染方式：<ul><li><b>Draw Twice</b></li><li><b>Draw FBO</b></li> <li><b>Draw Blit framebuffer</b></li></ul></td>
+    </tr>
+    <tr>
+      <td>Camera2GLTextureView</td>
+      <td>1.TextureView+OpenGL ES+Camera2<br/>2.MediaCodec+Surface录制视频，三种渲染方式：<ul><li><b>Draw Twice</b></li><li><b>Draw FBO</b></li> <li><b>Draw Blit framebuffer</b></li></ul></td>
+    </tr>
+  </tbody>
+</table>
 
 ## FAQ
 
