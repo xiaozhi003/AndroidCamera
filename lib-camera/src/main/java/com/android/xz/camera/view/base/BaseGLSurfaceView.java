@@ -398,7 +398,6 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
 
         @Override
         public void onSurfaceChanged(GL10 gl, int width, int height) {
-            gl.glViewport(0, 0, width, height);
             mCameraFilter.surfaceChanged(width, height);
             mCameraHandler.sendMessage(mCameraHandler.obtainMessage(CameraHandler.MSG_SURFACE_CHANGED, width, height));
         }
