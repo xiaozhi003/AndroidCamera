@@ -23,7 +23,7 @@ import java.io.File;
 import java.util.Date;
 
 /**
- * Camera预览数据渲染线程
+ * OpenGL ES渲染Camera预览数据的线程
  *
  * @author xiaozhi
  * @since 2024/8/22

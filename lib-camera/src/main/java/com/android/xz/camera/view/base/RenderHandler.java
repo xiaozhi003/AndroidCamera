@@ -7,7 +7,7 @@ import android.util.Log;
 import java.lang.ref.WeakReference;
 
 /**
- * Camera预览数据渲染线程通信Handler
+ * OpenGL ES渲染Camera预览数据线程的通信Handler
  *
  * @author xiaozhi
  * @since 2024/8/22
