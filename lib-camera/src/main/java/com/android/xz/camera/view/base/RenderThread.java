@@ -22,6 +22,12 @@ import com.android.xz.util.Logs;
 import java.io.File;
 import java.util.Date;
 
+/**
+ * Camera预览数据渲染线程
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
+ */
 public class RenderThread extends Thread {
 
     private static final String TAG = RenderThread.class.getSimpleName();

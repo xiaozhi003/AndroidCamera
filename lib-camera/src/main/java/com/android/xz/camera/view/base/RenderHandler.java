@@ -6,8 +6,14 @@ import android.util.Log;
 
 import java.lang.ref.WeakReference;
 
+/**
+ * Camera预览数据渲染线程通信Handler
+ *
+ * @author xiaozhi
+ * @since 2024/8/22
+ */
 public class RenderHandler extends Handler {
-    
+
     private static final String TAG = RenderHandler.class.getSimpleName();
     private static final int MSG_SURFACE_AVAILABLE = 0;
     private static final int MSG_SURFACE_CHANGED = 1;
