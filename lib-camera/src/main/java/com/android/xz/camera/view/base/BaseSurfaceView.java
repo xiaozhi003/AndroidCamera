@@ -48,7 +48,6 @@ public abstract class BaseSurfaceView extends SurfaceView implements SurfaceHold
     protected void init(Context context) {
         mContext = context;
         mSurfaceHolder = getHolder();
-        mSurfaceHolder.setFormat(PixelFormat.TRANSPARENT);//translucent半透明 transparent透明
         mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mSurfaceHolder.addCallback(this);
         mCameraManager = createCameraManager(context);

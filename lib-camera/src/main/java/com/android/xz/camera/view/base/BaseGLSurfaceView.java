@@ -407,12 +407,6 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
         public void onDrawFrame(GL10 gl) {
             if (mSurfaceTexture == null) return;
 
-            // 配置屏幕
-            //清理屏幕 :告诉opengl 需要把屏幕清理成什么颜色
-            GLES20.glClearColor(0, 0, 0, 0);
-            //执行上一个：glClearColor配置的屏幕颜色
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
             // 把摄像头的数据先输出来
             // 更新纹理，然后我们才能够使用opengl从SurfaceTexure当中获得数据 进行渲染
             mSurfaceTexture.updateTexImage();

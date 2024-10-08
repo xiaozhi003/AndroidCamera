@@ -82,7 +82,7 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         public void onPreviewFrame(byte[] data, Camera camera) {
             if (!mPreviewBufferCallbacks.isEmpty()) {
                 for (PreviewBufferCallback previewBufferCallback : mPreviewBufferCallbacks) {
-                    previewBufferCallback.onPreviewBufferFrame(data, mPreviewWidth, mPreviewHeight);
+                    previewBufferCallback.onPreviewBufferFrame(data, mPreviewWidth, mPreviewHeight, YUVFormat.NV21);
                 }
             }
             mCameraBytes = data;

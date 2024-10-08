@@ -6,6 +6,7 @@ import android.view.SurfaceHolder;
 
 import com.android.xz.camera.CameraManager;
 import com.android.xz.camera.ICameraManager;
+import com.android.xz.camera.YUVFormat;
 import com.android.xz.camera.callback.PreviewBufferCallback;
 import com.android.xz.camera.view.base.BaseSurfaceView;
 import com.android.xz.encoder.BufferMovieEncoder;
@@ -70,7 +71,7 @@ public class CameraSurfaceView extends BaseSurfaceView {
 
     private PreviewBufferCallback mPreviewBufferCallback = new PreviewBufferCallback() {
         @Override
-        public void onPreviewBufferFrame(byte[] data, int width, int height) {
+        public void onPreviewBufferFrame(byte[] data, int width, int height, YUVFormat format) {
             if (mEncoder != null) {
                 mEncoder.encode(data);
             }

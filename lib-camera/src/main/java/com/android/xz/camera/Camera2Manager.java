@@ -912,7 +912,7 @@ public class Camera2Manager implements ICameraManager {
                 }
                 if (!mPreviewBufferCallbacks.isEmpty()) {
                     for (PreviewBufferCallback previewBufferCallback : mPreviewBufferCallbacks) {
-                        previewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight());
+                        previewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight(), YUVFormat.I420);
                     }
                 }
                 lock.unlock();

@@ -1,5 +1,7 @@
 package com.android.xz.camera.callback;
 
+import com.android.xz.camera.YUVFormat;
+
 /**
  * 摄像头预览数据回调
  *
@@ -8,5 +10,5 @@ package com.android.xz.camera.callback;
  */
 public interface PreviewBufferCallback {
 
-    void onPreviewBufferFrame(byte[] data, int width, int height);
+    void onPreviewBufferFrame(byte[] data, int width, int height, YUVFormat format);
 }
