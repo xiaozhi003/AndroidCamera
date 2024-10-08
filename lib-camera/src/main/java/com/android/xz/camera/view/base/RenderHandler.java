@@ -49,8 +49,8 @@ public class RenderHandler extends Handler {
      * <p>
      * Call from UI thread.
      */
-    public void sendSurfaceAvailable(Object surface, boolean newSurface) {
-        sendMessage(obtainMessage(MSG_SURFACE_AVAILABLE, newSurface ? 1 : 0, 0, surface));
+    public void sendSurfaceAvailable(Object surface) {
+        sendMessage(obtainMessage(MSG_SURFACE_AVAILABLE, 0, 0, surface));
     }
 
     /**
@@ -126,7 +126,7 @@ public class RenderHandler extends Handler {
 
         switch (what) {
             case MSG_SURFACE_AVAILABLE:
-                renderThread.surfaceAvailable(msg.obj, msg.arg1 != 0);
+                renderThread.surfaceAvailable(msg.obj);
                 break;
             case MSG_SURFACE_CHANGED:
                 renderThread.surfaceChanged(msg.arg1, msg.arg2);

@@ -143,7 +143,7 @@ public class RenderThread extends Thread {
         return mHandler;
     }
 
-    public void surfaceAvailable(Object surface, boolean newSurface) {
+    public void surfaceAvailable(Object surface) {
         mRecordingEnabled = mVideoEncoder.isRecording();
         if (mRecordingEnabled) {
             mRecordingStatus = RECORDING_RESUMED;

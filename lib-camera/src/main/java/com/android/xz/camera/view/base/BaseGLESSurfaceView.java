@@ -101,7 +101,7 @@ public abstract class BaseGLESSurfaceView extends SurfaceView implements Surface
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
             if (handler != null) {
-                handler.sendSurfaceAvailable(mSurfaceHolder, true);
+                handler.sendSurfaceAvailable(mSurfaceHolder);
             }
         }
     }

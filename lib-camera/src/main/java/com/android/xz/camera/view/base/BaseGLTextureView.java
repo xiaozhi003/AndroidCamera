@@ -166,7 +166,7 @@ public abstract class BaseGLTextureView extends TextureView implements
         if (mRenderThread != null) {
             RenderHandler handler = mRenderThread.getHandler();
             if (handler != null) {
-                handler.sendSurfaceAvailable(mSurfaceTexture, true);
+                handler.sendSurfaceAvailable(mSurfaceTexture);
                 handler.sendSurfaceChanged(0, width, height);
             }
         }
