@@ -40,7 +40,7 @@
     </tr>
     <tr>
       <td>CameraGLSurfaceView</td>
-      <td>1.GLSurfaceView+Camera<br>2.MediaCodec+Surface录制视频，多线程共享EGL方式</td>
+      <td>1.GLSurfaceView+Camera<br>2.MediaCodec+Surface录制视频，<b>多线程共享EGL</b>方式</td>
     </tr>
     <tr>
       <td>CameraGLSurfaceHolderView</td>
@@ -72,6 +72,7 @@
     </tr>
   </tbody>
 </table>
+
 
 ## FAQ
 
