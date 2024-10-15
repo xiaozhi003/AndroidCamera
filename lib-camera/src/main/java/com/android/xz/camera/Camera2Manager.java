@@ -37,6 +37,7 @@ import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.camera.callback.PictureBufferCallback;
 import com.android.xz.camera.callback.PreviewBufferCallback;
 import com.android.xz.util.Logs;
+import com.android.xz.util.YUVUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -155,7 +156,7 @@ public class Camera2Manager implements ICameraManager {
 
     @Override
     public void addPreviewBufferCallback(PreviewBufferCallback previewBufferCallback) {
-        if (previewBufferCallback != null) {
+        if (previewBufferCallback != null && !mPreviewBufferCallbacks.contains(previewBufferCallback)) {
             mPreviewBufferCallbacks.add(previewBufferCallback);
         }
     }
@@ -409,7 +410,7 @@ public class Camera2Manager implements ICameraManager {
 
     @Override
     public void startPreview(SurfaceHolder surfaceHolder) {
-        if (previewing) {
+        if (previewing || !isOpen()) {
             return;
         }
         previewing = true;
@@ -420,7 +421,7 @@ public class Camera2Manager implements ICameraManager {
 
     @Override
     public void startPreview(SurfaceTexture surfaceTexture) {
-        if (previewing) {
+        if (previewing || !isOpen()) {
             return;
         }
         previewing = true;
@@ -819,6 +820,7 @@ public class Camera2Manager implements ICameraManager {
                     yuvData = new byte[width * height * 3 / 2];
                 }
 
+                YUVFormat yuvFormat = YUVFormat.I420;
                 if (bufferY.remaining() == y.length) {
                     bufferY.get(y);
                     bufferU.get(u);
@@ -840,6 +842,7 @@ public class Camera2Manager implements ICameraManager {
 
                     // 判断是p还是sp
                     if (planes[1].getPixelStride() == 1) { // P
+                        yuvFormat = YUVFormat.I420;
                         int offset = ySize;
                         // 处理U
                         int uRowStride = planes[1].getRowStride();
@@ -864,47 +867,23 @@ public class Camera2Manager implements ICameraManager {
                             }
                         }
                     } else if (planes[1].getPixelStride() == 2) { // SP
+                        yuvFormat = YUVFormat.NV21;
                         int offset = width * height;
+                        int uvSize = ySize / 2;
 
-                        // 处理U分量
-                        int uRowStride = planes[1].getRowStride();
-                        if (uRowStride == width) {
-                            for (int i = 0; i < u.length; i++) {
-                                if (0 == (i % 2)) {
-                                    yuvData[offset] = u[i];
-                                    offset++;
-                                }
-                            }
+                        // 处理UV
+                        int uvRowStride = planes[2].getRowStride();
+                        if (uvRowStride == width) {
+                            System.arraycopy(v, 0, yuvData, offset, v.length > uvSize ? uvSize : v.length);
                         } else {
                             // 按行提取
-                            for (int i = 0; i < height / 2; i++) {
-                                for (int j = i * uRowStride; j < uRowStride * i + width; j++) {
-                                    if (0 == (j % 2)) {
-                                        yuvData[offset] = u[i];
-                                        offset++;
-                                    }
-                                }
-                            }
-                        }
-
-                        offset = width * height * 5 / 4;
-                        // 提取V分量
-                        int vRowStride = planes[2].getRowStride();
-                        if (vRowStride == width) {
-                            for (int i = 0; i < v.length; i++) {
-                                if (0 == (i % 2)) {
-                                    yuvData[offset] = v[i];
-                                    offset++;
-                                }
-                            }
-                        } else {
-                            // 按行提取
-                            for (int i = 0; i < height / 2; i++) {
-                                for (int j = i * vRowStride; j < vRowStride * i + width; j++) {
-                                    if (0 == (j % 2)) {
-                                        yuvData[offset] = u[i];
-                                        offset++;
-                                    }
+                            int rowSize = height / 2;
+                            for (int i = 0; i < rowSize; i++) {
+                                if (i == rowSize - 1) {
+                                    int lastLineSize = v.length - i * uvRowStride;
+                                    System.arraycopy(v, i * uvRowStride, yuvData, offset + i * width, lastLineSize < width ? lastLineSize : width);
+                                } else {
+                                    System.arraycopy(v, i * uvRowStride, yuvData, offset + i * width, width);
                                 }
                             }
                         }
@@ -912,7 +891,7 @@ public class Camera2Manager implements ICameraManager {
                 }
                 if (!mPreviewBufferCallbacks.isEmpty()) {
                     for (PreviewBufferCallback previewBufferCallback : mPreviewBufferCallbacks) {
-                        previewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight(), YUVFormat.I420);
+                        previewBufferCallback.onPreviewBufferFrame(yuvData, image.getWidth(), image.getHeight(), yuvFormat);
                     }
                 }
                 lock.unlock();

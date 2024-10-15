@@ -6,6 +6,10 @@ import android.view.SurfaceHolder;
 
 import com.android.xz.camera.Camera2Manager;
 import com.android.xz.camera.ICameraManager;
+import com.android.xz.camera.YUVFormat;
+import com.android.xz.camera.callback.PreviewBufferCallback;
+import com.android.xz.encoder.BufferMovieEncoder;
+import com.android.xz.encoder.MediaRecordListener;
 import com.android.xz.util.Logs;
 import com.android.xz.camera.view.base.BaseSurfaceView;
 
@@ -17,6 +21,11 @@ import com.android.xz.camera.view.base.BaseSurfaceView;
  */
 public class Camera2SurfaceView extends BaseSurfaceView {
 
+    /**
+     * 使用Buffer录制视频类
+     */
+    private BufferMovieEncoder mEncoder;
+
     public Camera2SurfaceView(Context context) {
         super(context);
     }
@@ -27,6 +36,12 @@ public class Camera2SurfaceView extends BaseSurfaceView {
 
     public Camera2SurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+    }
+
+    @Override
+    protected void init(Context context) {
+        super.init(context);
+        mEncoder = new BufferMovieEncoder(context);
     }
 
     @Override
@@ -53,6 +68,7 @@ public class Camera2SurfaceView extends BaseSurfaceView {
         mPreviewSize = getCameraManager().getPreviewSize();
         getSurfaceHolder().setFixedSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         float ratio = mSurfaceHeight * 1.0f / mSurfaceWidth;
+        getCameraManager().addPreviewBufferCallback(mPreviewBufferCallback);
         if (ratio == mPreviewSize.getHeight() * 1f / mPreviewSize.getWidth()) {
             Logs.i(TAG, "startPreview2");
             getCameraManager().startPreview(getSurfaceHolder());
@@ -60,7 +76,46 @@ public class Camera2SurfaceView extends BaseSurfaceView {
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        stopRecord();
+    }
+
+    @Override
     public ICameraManager createCameraManager(Context context) {
         return new Camera2Manager(context);
+    }
+
+    private PreviewBufferCallback mPreviewBufferCallback = new PreviewBufferCallback() {
+        @Override
+        public void onPreviewBufferFrame(byte[] data, int width, int height, YUVFormat format) {
+            if (mEncoder != null) {
+                mEncoder.encode(data, format);
+            }
+        }
+    };
+
+    /**
+     * 开始录制视频
+     */
+    public void startRecord() {
+        if (!getCameraManager().isOpen()) {
+            return;
+        }
+        mEncoder.setRecordListener(mRecordListener);
+        mEncoder.startRecord(getCameraManager().getOrientation(), getCameraManager().getPreviewSize());
+    }
+
+    /**
+     * 停止录制视频
+     */
+    public void stopRecord() {
+        mEncoder.stopRecord();
+    }
+
+    private MediaRecordListener mRecordListener;
+
+    public void setRecordListener(MediaRecordListener recordListener) {
+        mRecordListener = recordListener;
     }
 }

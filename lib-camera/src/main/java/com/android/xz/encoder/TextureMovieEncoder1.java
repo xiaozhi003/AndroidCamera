@@ -372,9 +372,11 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
         try {
             mMuxerWrapper = new MediaMuxerWrapper(".mp4", outputFile);
             mediaSurfaceEncoder = new MediaSurfaceEncoder(mMuxerWrapper, width, height, new MediaEncoder.MediaEncoderListener() {
+                String path;
                 @Override
                 public void onPrepared(MediaEncoder encoder) {
                     mEncoder = encoder;
+                    path = mEncoder.getOutputPath();
                     mUIHandler.post(() -> {
                         if (mRecordListener != null) {
                             mRecordListener.onStart();
@@ -386,7 +388,7 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
                 public void onStopped(MediaEncoder encoder) {
                     mUIHandler.post(() -> {
                         if (mRecordListener != null) {
-                            mRecordListener.onStopped(encoder.getOutputPath());
+                            mRecordListener.onStopped(path);
                         }
                     });
                 }

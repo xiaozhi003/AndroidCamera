@@ -1,7 +1,5 @@
 package com.android.xz.camerademo.mediacodec_activity;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
@@ -11,13 +9,15 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.android.xz.camera.CameraManager;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.xz.camera.ICameraManager;
+import com.android.xz.camera.view.CameraSurfaceView;
 import com.android.xz.camerademo.MediaDisplayActivity;
 import com.android.xz.camerademo.R;
 import com.android.xz.camerademo.view.CaptureButton;
 import com.android.xz.encoder.MediaRecordListener;
 import com.android.xz.util.ImageUtils;
-import com.android.xz.camera.view.CameraSurfaceView;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,7 +27,7 @@ public class MediaCodecBufferActivity extends AppCompatActivity {
 
     private static final String TAG = MediaCodecBufferActivity.class.getSimpleName();
     private CameraSurfaceView mCameraSurfaceView;
-    private CameraManager mCameraManager;
+    private ICameraManager mCameraManager;
     private ImageView mPictureIv;
     private CaptureButton mCaptureBtn;
     private TextView mTimeTv;
@@ -41,7 +41,7 @@ public class MediaCodecBufferActivity extends AppCompatActivity {
 
         mCameraSurfaceView = findViewById(R.id.cameraView);
         mCameraSurfaceView.setRecordListener(mRecordListener);
-        mCameraManager = (CameraManager) mCameraSurfaceView.getCameraManager();
+        mCameraManager = mCameraSurfaceView.getCameraManager();
         mCaptureBtn = findViewById(R.id.captureBtn);
         mCaptureBtn.setClickListener(mClickListener);
         mTimeTv = findViewById(R.id.timeTv);

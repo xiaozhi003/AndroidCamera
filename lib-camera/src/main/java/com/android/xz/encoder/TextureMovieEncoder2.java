@@ -226,11 +226,13 @@ public class TextureMovieEncoder2 implements Runnable {
             mVideoHeight = encoderConfig.mHeight;
             mMuxerWrapper = new MediaMuxerWrapper(".mp4", encoderConfig.mOutputFile);
             mediaSurfaceEncoder = new MediaSurfaceEncoder(mMuxerWrapper, encoderConfig.mWidth, encoderConfig.mHeight, new MediaEncoder.MediaEncoderListener() {
+                String path;
                 @Override
                 public void onPrepared(MediaEncoder encoder) {
                     Logs.i(TAG, "onPrepared.");
                     isRecording = true;
                     mEncoder = encoder;
+                    path = mEncoder.getOutputPath();
                     mUIHandler.post(() -> {
                         if (mRecordListener != null) {
                             mRecordListener.onStart();
@@ -243,7 +245,7 @@ public class TextureMovieEncoder2 implements Runnable {
                     Logs.i(TAG, "onStopped.");
                     mUIHandler.post(() -> {
                         if (mRecordListener != null) {
-                            mRecordListener.onStopped(encoder.getOutputPath());
+                            mRecordListener.onStopped(path);
                         }
                     });
                 }

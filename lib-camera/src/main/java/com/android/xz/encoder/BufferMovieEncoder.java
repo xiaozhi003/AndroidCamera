@@ -3,8 +3,10 @@ package com.android.xz.encoder;
 import android.content.Context;
 import android.media.MediaCodecInfo;
 import android.os.Handler;
+import android.util.Log;
 import android.util.Size;
 
+import com.android.xz.camera.YUVFormat;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 import com.android.xz.util.YUVUtils;
@@ -59,10 +61,12 @@ public class BufferMovieEncoder {
             final MediaMuxerWrapper muxerWrapper = new MediaMuxerWrapper(".mp4", outputFile);
             muxerWrapper.setOrientationHint(mOrientation);
             new MediaVideoBufferEncoder(muxerWrapper, mSize.getWidth(), mSize.getHeight(), new MediaEncoder.MediaEncoderListener() {
+                String path;
                 @Override
                 public void onPrepared(MediaEncoder encoder) {
                     Logs.i(TAG, "onPrepared.");
                     mEncoder = (MediaVideoBufferEncoder) encoder;
+                    path = mEncoder.getOutputPath();
                     if (mRecordListener != null) {
                         mRecordListener.onStart();
                     }
@@ -71,10 +75,9 @@ public class BufferMovieEncoder {
                 @Override
                 public void onStopped(MediaEncoder encoder) {
                     Logs.i(TAG, "onStopped");
-                    String outputPath = encoder.getOutputPath();
                     mUIHandler.post(() -> {
                         if (mRecordListener != null) {
-                            mRecordListener.onStopped(outputPath);
+                            mRecordListener.onStopped(path);
                         }
                     });
                 }
@@ -105,28 +108,49 @@ public class BufferMovieEncoder {
      * @param data nv21
      */
     public void encode(byte[] data) {
+        encode(data, YUVFormat.NV21);
+    }
+
+    /**
+     * 编码数据
+     *
+     * @param data nv21
+     */
+    public void encode(byte[] data, YUVFormat yuvFormat) {
         if (mEncoder != null) {
             int mColorFormat = mEncoder.getColorFormat();
             byte[] encodeData = null;
             long start = System.currentTimeMillis();
             if (mColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar
                     || mColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420PackedPlanar) { // 19, 20：I420
-                YUVUtils.nativeNV21ToI420(data, mSize.getWidth(), mSize.getHeight(), mTempData);
-                encodeData = mTempData;
+                if (yuvFormat == YUVFormat.NV21) {
+                    YUVUtils.nativeNV21ToI420(data, mSize.getWidth(), mSize.getHeight(), mTempData);
+                    encodeData = mTempData;
+                } else {
+                    encodeData = data;
+                }
             } else if (mColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar
                     || mColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420PackedSemiPlanar
                     || mColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_TI_FormatYUV420PackedSemiPlanar) { // 21, 39：NV12
                 // 使用C层转换最快
-                YUVUtils.nativeNV21ToNV12(data, mSize.getWidth(), mSize.getHeight(), mTempData);
+                if (yuvFormat == YUVFormat.NV21) {
+                    YUVUtils.nativeNV21ToNV12(data, mSize.getWidth(), mSize.getHeight(), mTempData);
+                } else {
+                    YUVUtils.nativeI420ToNV12(data, mSize.getWidth(), mSize.getHeight(), mTempData);
+                }
                 encodeData = mTempData;
             } else if (mColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar) {// 2141391872：NV21
-                encodeData = data;
+                if (yuvFormat == YUVFormat.NV21) {
+                    encodeData = data;
+                } else {
+                    YUVUtils.nativeI420ToNV21(data, mSize.getWidth(), mSize.getHeight(), mTempData);
+                    encodeData = mTempData;
+                }
             }
-            long end = System.currentTimeMillis();
+//            Log.i(TAG, "耗时：" + (System.currentTimeMillis() - start) + "ms");
             mEncoder.frameAvailableSoon();
             ByteBuffer buffer = ByteBuffer.wrap(encodeData);
             mEncoder.encode(buffer);
-//            Logs.i(TAG, "video encode:" + (System.currentTimeMillis() - end) + "ms");
         }
     }
 }

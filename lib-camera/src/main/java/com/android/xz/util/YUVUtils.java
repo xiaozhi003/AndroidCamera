@@ -15,6 +15,8 @@ public class YUVUtils {
 
     public native static void  nativeI420ToNV12(byte[] src, int width, int height, byte[] dst);
 
+    public native static void  nativeI420ToNV21(byte[] src, int width, int height, byte[] dst);
+
     public native static void  nativeNV21ToNV12(byte[] src, int width, int height, byte[] dst);
 
     /**
