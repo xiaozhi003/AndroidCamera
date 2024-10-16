@@ -37,7 +37,6 @@ import com.android.xz.camera.callback.CameraCallback;
 import com.android.xz.camera.callback.PictureBufferCallback;
 import com.android.xz.camera.callback.PreviewBufferCallback;
 import com.android.xz.util.Logs;
-import com.android.xz.util.YUVUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -184,12 +183,12 @@ public class Camera2Manager implements ICameraManager {
 
     private void setUpCameraOutputs(CameraManager cameraManager) {
         try {
-            if (configCameraParams(cameraManager, mCameraId + "")) {
-                return;
-            }
             for (String cameraId : cameraManager.getCameraIdList()) {
-                if (configCameraParams(cameraManager, cameraId)) {
-                    return;
+                if ((mCameraId + "").equals(cameraId)) {
+                    if (!configCameraParams(cameraManager, cameraId)) {
+                        onOpenError(CAMERA_ERROR_OPEN, "Camera config error.");
+                    }
+                    break;
                 }
             }
         } catch (CameraAccessException e) {
