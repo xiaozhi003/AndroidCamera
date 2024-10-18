@@ -63,9 +63,13 @@ public class Camera2Manager implements ICameraManager {
     private Context mContext;
 
     /**
-     * 要打开的摄像头ID
+     * 要打开的摄像头ID，0：后置，1：前置
      */
-    private int mCameraId = CameraCharacteristics.LENS_FACING_FRONT;
+    private int mCameraId;
+    /**
+     * 摄像头朝向
+     */
+    private int mFacing;
     /**
      * 相机属性
      */
@@ -181,24 +185,41 @@ public class Camera2Manager implements ICameraManager {
         };
     }
 
-    private void setUpCameraOutputs(CameraManager cameraManager) {
+    private String setUpCameraOutputs(CameraManager cameraManager) {
+        String cameraId = null;
         try {
-            for (String cameraId : cameraManager.getCameraIdList()) {
-                if ((mCameraId + "").equals(cameraId)) {
-                    if (!configCameraParams(cameraManager, cameraId)) {
-                        onOpenError(CAMERA_ERROR_OPEN, "Camera config error.");
-                    }
+            // 获取相机ID列表
+            String[] cameraIdList = cameraManager.getCameraIdList();
+            for (String id : cameraIdList) {
+                // 获取相机特征
+                CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(id);
+                int facing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+                if (mCameraId == 0 && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    cameraId = id;
+                    break;
+                } else if (mCameraId == 1 && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                    cameraId = id;
                     break;
                 }
             }
+
+            if (cameraId == null) {
+                onOpenError(CAMERA_ERROR_NO_ID, "Camera id:" + mCameraId + " not found.");
+                return null;
+            }
+
+            if (!configCameraParams(cameraManager, cameraId)) {
+                onOpenError(CAMERA_ERROR_OPEN, "Config camera error.");
+                return null;
+            }
         } catch (CameraAccessException e) {
             onOpenError(CAMERA_ERROR_OPEN, e.getMessage());
+            return null;
         } catch (NullPointerException e) {
-            // Currently an NPE is thrown when the Camera2API is used but not supported on the
-            // device this code runs.
-
             onOpenError(CAMERA_ERROR_OPEN, e.getMessage());
+            return null;
         }
+        return cameraId;
     }
 
     private boolean configCameraParams(CameraManager manager, String cameraId) throws CameraAccessException {
@@ -253,26 +274,23 @@ public class Camera2Manager implements ICameraManager {
             return;
         }
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
-        setUpCameraOutputs(mCameraManager);
+        // 相机ID
+        String cameraId = setUpCameraOutputs(mCameraManager);
+        if (cameraId == null) return;
         startBackgroundThread(); // 对应 releaseCamera() 方法中的 stopBackgroundThread()
         mOrientationEventListener.enable();
         try {
-            mCameraCharacteristics = mCameraManager.getCameraCharacteristics(Integer.toString(mCameraId));
+            mCameraCharacteristics = mCameraManager.getCameraCharacteristics(cameraId);
             // 每次切换摄像头计算一次就行，结果缓存到成员变量中
             initDisplayRotation();
             initZoomParameter();
-            // 打开摄像头
+            mFacing = mCameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+            Logs.i(TAG, "facing:" + mFacing);
             if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
                 return;
             }
-            mCameraManager.openCamera(Integer.toString(mCameraId), mStateCallback, mBackgroundHandler);
+            // 打开摄像头
+            mCameraManager.openCamera(cameraId, mStateCallback, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -563,7 +581,7 @@ public class Camera2Manager implements ICameraManager {
     }
 
     public boolean isFrontCamera() {
-        return mCameraId == CameraCharacteristics.LENS_FACING_BACK;
+        return mFacing == CameraMetadata.LENS_FACING_FRONT;
     }
 
     public Size getPictureSize() {
@@ -576,7 +594,6 @@ public class Camera2Manager implements ICameraManager {
 
     public void switchCamera() {
         mCameraId ^= 1;
-        Log.d(TAG, "switchCamera: mCameraId: " + mCameraId);
         releaseCamera();
         openCamera();
     }
