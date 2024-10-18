@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Size;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -146,7 +147,7 @@ public class MediaCodecSurfaceActivity extends AppCompatActivity {
         @Override
         protected Bitmap doInBackground(byte[]... bytes) {
             path = ImageUtils.saveImage(bytes[0]);
-            return ImageUtils.getLatestThumbBitmap();
+            return ImageUtils.getCorrectOrientationBitmap(path, new Size(mPictureIv.getMeasuredWidth(), mPictureIv.getMeasuredHeight()));
         }
 
         @Override
