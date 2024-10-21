@@ -363,8 +363,8 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
                 mParameters.setFlashMode(Parameters.FLASH_MODE_OFF); // 设置闪光模式
             }
             List<String> supportedFocusModes = mParameters.getSupportedFocusModes();
-            if (supportedFocusModes != null && supportedFocusModes.contains(Parameters.FOCUS_MODE_AUTO)) {
-                mParameters.setFocusMode(Parameters.FOCUS_MODE_AUTO); // 设置聚焦模式
+            if (supportedFocusModes != null && supportedFocusModes.contains(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                mParameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO); // 设置聚焦模式
             }
             mParameters.setPreviewFormat(ImageFormat.NV21); // 设置预览图片格式
             mParameters.setPictureFormat(ImageFormat.JPEG); // 设置拍照图片格式
