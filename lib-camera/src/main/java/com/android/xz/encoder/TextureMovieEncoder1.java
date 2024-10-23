@@ -313,7 +313,6 @@ public class TextureMovieEncoder1 extends TextureEncoder implements Runnable {
         mInputWindowSurface.setPresentationTime(timestampNanos);
         mInputWindowSurface.swapBuffers();
         busy = false;
-        Logs.i(TAG, "frame:" + (System.currentTimeMillis() - start) + "ms");
     }
 
     /**
