@@ -7,7 +7,7 @@
     android:orientation="vertical"
     tools:context=".CameraActivity">
 
-    <com.android.xz.camera.view.CameraGLSurfaceHolderView
+    <com.android.xz.camera.view.Camera2GLESSurfaceView
         android:id="@+id/cameraView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

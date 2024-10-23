@@ -39,7 +39,7 @@
     <Button
         android:id="@+id/glSurfaceHolderCameraBtn"
         android:textAllCaps="false"
-        android:text="Camera GLESSurfaceHolder"
+        android:text="Camera GLESSurfaceView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
@@ -74,7 +74,7 @@
     <Button
         android:id="@+id/glSurfaceHolderCamera2Btn"
         android:textAllCaps="false"
-        android:text="Camera2 GLESSurfaceHolder"
+        android:text="Camera2 GLESSurfaceView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 

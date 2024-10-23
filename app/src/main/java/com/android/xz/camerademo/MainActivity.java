@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         startCameraActivity(R.layout.activity_glsurface_camera);
                         break;
                     case R.id.glSurfaceHolderCameraBtn:
-                        startCameraActivity(R.layout.activity_glsurface_holder_camera);
+                        startCameraActivity(R.layout.activity_glessurface_camera);
                         break;
                     case R.id.surfaceCamera2Btn:
                         startCameraActivity(R.layout.activity_surface_camera2);
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         startCameraActivity(R.layout.activity_gltexture_camera2);
                         break;
                     case R.id.glSurfaceHolderCamera2Btn:
-                        startCameraActivity(R.layout.activity_glsurface_holder_camera2);
+                        startCameraActivity(R.layout.activity_glessurface_camera2);
                         break;
                     case R.id.mediaCodecBufferBtn:
                         startActivity(new Intent(mContext, MediaCodecBufferActivity.class));

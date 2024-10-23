@@ -3,32 +3,32 @@ package com.android.xz.camera.view;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import com.android.xz.camera.CameraManager;
+import com.android.xz.camera.Camera2Manager;
 import com.android.xz.camera.ICameraManager;
 import com.android.xz.camera.view.base.BaseGLESSurfaceView;
 
 /**
- * 适用Camera的SurfaceView，自定义opengl
+ * 适用Camera2的SurfaceView，自定义opengl
  *
  * @author xiaozhi
  * @since 2024/8/22
  */
-public class CameraGLSurfaceHolderView extends BaseGLESSurfaceView {
+public class Camera2GLESSurfaceView extends BaseGLESSurfaceView {
 
-    public CameraGLSurfaceHolderView(Context context) {
+    public Camera2GLESSurfaceView(Context context) {
         super(context);
     }
 
-    public CameraGLSurfaceHolderView(Context context, AttributeSet attrs) {
+    public Camera2GLESSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public CameraGLSurfaceHolderView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public Camera2GLESSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
     @Override
     public ICameraManager createCameraManager(Context context) {
-        return new CameraManager(context);
+        return new Camera2Manager(context);
     }
 }

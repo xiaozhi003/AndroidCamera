@@ -43,7 +43,7 @@
       <td>1.GLSurfaceView+Camera<br>2.MediaCodec+Surface录制视频，<b>多线程共享EGL</b>方式</td>
     </tr>
     <tr>
-      <td>CameraGLSurfaceHolderView</td>
+      <td>CameraGLESSurfaceView</td>
       <td>1.SurfaceView+OpenGL ES+Camera<br>2.MediaCodec+Surface录制视频，三种渲染方式：<ul><li><b>Draw Twice</b></li><li><b>Draw FBO</b></li> <li><b>Draw Blit framebuffer</b></li></ul></td>
     </tr>
     <tr>
@@ -63,7 +63,7 @@
       <td>1.GLSurfaceView+Camera2<br/>2.MediaCodec+Surface录制视频，多线程共享EGL方式</td>
     </tr>
     <tr>
-      <td>Camera2GLSurfaceHolderView</td>
+      <td>Camera2GLESSurfaceView</td>
       <td>1.SurfaceView+OpenGL ES+Camera2<br/>2.MediaCodec+Surface录制视频，三种渲染方式：<ul><li><b>Draw Twice</b></li><li><b>Draw FBO</b></li> <li><b>Draw Blit framebuffer</b></li></ul></td>
     </tr>
     <tr>
@@ -72,6 +72,7 @@
     </tr>
   </tbody>
 </table>
+
 
 
 ## FAQ
@@ -97,6 +98,10 @@
 [Android Camera系列（二）：TextureView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141855031)
 
 [Android Camera系列（三）：GLSurfaceView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141860162)
+
+[Android Camera系列（四）：TextureView+OpenGL ES+Camera](https://blog.csdn.net/xiaozhiwz/article/details/142781497)
+
+[Android Camera系列（五）：Camera2](https://blog.csdn.net/xiaozhiwz/article/details/142555345)
 
 
 
