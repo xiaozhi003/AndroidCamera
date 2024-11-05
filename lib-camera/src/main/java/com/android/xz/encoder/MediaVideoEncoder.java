@@ -106,11 +106,7 @@ public class MediaVideoEncoder extends MediaEncoder implements IVideoEncoder {
         mMediaCodec.start();
         if (DEBUG) Log.i(TAG, "prepare finishing");
         if (mListener != null) {
-            try {
-                mListener.onPrepared(this);
-            } catch (final Exception e) {
-                Log.e(TAG, "prepare:", e);
-            }
+            mListener.onPrepared(this);
         }
     }
 
