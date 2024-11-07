@@ -116,7 +116,6 @@ public abstract class MediaEncoder implements Runnable {
      * @return return true if encoder is ready to encod.
      */
     public boolean frameAvailableSoon() {
-//    	if (DEBUG) Log.v(TAG, "frameAvailableSoon");
         synchronized (mSync) {
             if (!mIsCapturing || mRequestStop) {
                 return false;
@@ -136,7 +135,7 @@ public abstract class MediaEncoder implements Runnable {
      */
     @Override
     public void run() {
-//		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
         synchronized (mSync) {
             mRequestStop = false;
             mRequestDrain = 0;
@@ -314,11 +313,11 @@ public abstract class MediaEncoder implements Runnable {
      */
     @SuppressWarnings("deprecation")
     protected void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
-//    	if (DEBUG) Log.v(TAG, "encode:buffer=" + buffer);
         if (!mIsCapturing) return;
         int ix = 0, sz;
         final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
         while (mIsCapturing && ix < length) {
+            // 从输入缓冲区队列中去除可以用缓冲区，并填充数据
             final int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_USEC);
             if (inputBufferIndex >= 0) {
                 final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
@@ -331,7 +330,6 @@ public abstract class MediaEncoder implements Runnable {
                     inputBuffer.put(buffer);
                 }
                 ix += sz;
-//	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
                 if (length <= 0) {
                     // send EOS
                     mIsEOS = true;
@@ -361,13 +359,13 @@ public abstract class MediaEncoder implements Runnable {
         int encoderStatus, count = 0;
         final MediaMuxerWrapper muxer = mWeakMuxer.get();
         if (muxer == null) {
-//        	throw new NullPointerException("muxer is unexpectedly null");
             Log.w(TAG, "muxer is unexpectedly null");
             return;
         }
         LOOP:
         while (mIsCapturing) {
             // get encoded data with maximum timeout duration of TIMEOUT_USEC(=10[msec])
+            // 获取最大超时持续时间为timeout_USEC（=10[msec]）的编码数据
             encoderStatus = mMediaCodec.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
             if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
                 // wait 5 counts(=TIMEOUT_USEC x 5 = 50msec) until data/EOS come

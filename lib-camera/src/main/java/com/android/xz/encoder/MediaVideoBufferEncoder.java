@@ -123,8 +123,11 @@ public class MediaVideoBufferEncoder extends MediaEncoder implements IVideoEncod
         }
         if (DEBUG) Log.i(TAG, "format: " + format);
 
+        // 创建MediaCodec，此时是Uninitialized 状态
         mMediaCodec = MediaCodec.createByCodecName(videoCodecInfo.getName());
+        // 调用 configure 进入 Configured 状态
         mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        // 调用 start 进入 Executing 状态，开始编解码工作
         mMediaCodec.start();
         if (DEBUG) Log.i(TAG, "prepare finishing");
         if (mListener != null) {
