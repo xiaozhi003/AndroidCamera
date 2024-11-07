@@ -109,7 +109,7 @@ public class MediaVideoBufferEncoder extends MediaEncoder implements IVideoEncod
         format.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate());
         format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
         format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // 描述编码器要使用的所需比特率模式的键
             // BITRATE_MODE_CQ: 表示完全不控制码率，尽最大可能保证图像质量
