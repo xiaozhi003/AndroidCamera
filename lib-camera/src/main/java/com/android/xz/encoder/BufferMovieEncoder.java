@@ -114,7 +114,7 @@ public class BufferMovieEncoder {
     /**
      * 编码数据
      *
-     * @param data nv21
+     * @param data YUV420
      */
     public void encode(byte[] data, YUVFormat yuvFormat) {
         if (mEncoder != null) {
