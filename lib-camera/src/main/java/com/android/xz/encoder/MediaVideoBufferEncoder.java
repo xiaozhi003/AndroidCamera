@@ -51,8 +51,8 @@ public class MediaVideoBufferEncoder extends MediaEncoder implements IVideoEncod
     private static final String MIME_TYPE = "video/avc";
 
     // parameters for recording
-    private static final int FRAME_RATE = 15;
-    private static float BPP = 1.0f;
+    private static final int FRAME_RATE = 30;
+    private static float BPP = 0.5f;
 
     private final int mWidth, mHeight;
     protected int mColorFormat;
@@ -109,7 +109,7 @@ public class MediaVideoBufferEncoder extends MediaEncoder implements IVideoEncod
         format.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate());
         format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
         format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 5);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // 描述编码器要使用的所需比特率模式的键
             // BITRATE_MODE_CQ: 表示完全不控制码率，尽最大可能保证图像质量
@@ -136,7 +136,7 @@ public class MediaVideoBufferEncoder extends MediaEncoder implements IVideoEncod
     }
 
     private int calcBitRate() {
-        final int bitrate = (int) (BPP * FRAME_RATE * mWidth * mHeight);
+        final int bitrate = (int) (BPP * FRAME_RATE * mWidth * mHeight / 2);
         Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
         return bitrate;
     }

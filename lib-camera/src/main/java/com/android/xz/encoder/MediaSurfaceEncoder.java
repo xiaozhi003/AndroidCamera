@@ -41,8 +41,8 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
     private static final String MIME_TYPE = "video/avc";
     // parameters for recording
     private final int mWidth, mHeight;
-    private static final int FRAME_RATE = 15;
-    private static final float BPP = 1.0f;
+    private static final int FRAME_RATE = 30;
+    private static final float BPP = 0.5f;
 
     private Surface mSurface;
 
@@ -89,7 +89,7 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);    // API >= 18
         format.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate());
         format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 5);
         if (DEBUG) Log.i(TAG, "format: " + format);
 
         mMediaCodec = MediaCodec.createEncoderByType(MIME_TYPE);
@@ -115,7 +115,7 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
     }
 
     private int calcBitRate() {
-        final int bitrate = (int) (BPP * FRAME_RATE * mWidth * mHeight);
+        final int bitrate = (int) (BPP * FRAME_RATE * mWidth * mHeight / 2);
         Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
         return bitrate;
     }
