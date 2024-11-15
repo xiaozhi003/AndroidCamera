@@ -103,7 +103,7 @@
 
 [Android Camera系列（五）：Camera2](https://blog.csdn.net/xiaozhiwz/article/details/142555345)
 
-
+[Android Camera系列（六）：MediaCodec视频编码上-编码YUV](https://blog.csdn.net/xiaozhiwz/article/details/143114530)
 
 参考：
 1. [https://github.com/afei-cn/CameraDemo](https://github.com/afei-cn/CameraDemo)

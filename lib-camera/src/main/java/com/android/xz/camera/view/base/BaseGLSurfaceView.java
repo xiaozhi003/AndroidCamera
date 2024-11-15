@@ -407,7 +407,7 @@ public abstract class BaseGLSurfaceView extends GLSurfaceView implements Surface
             if (mSurfaceTexture == null) return;
 
             // 把摄像头的数据先输出来
-            // 更新纹理，然后我们才能够使用opengl从SurfaceTexure当中获得数据 进行渲染
+            // 更新纹理，然后我们才能够使用opengl从SurfaceTexture当中获得数据 进行渲染
             mSurfaceTexture.updateTexImage();
 
             // If the recording state is changing, take care of it here.  Ideally we wouldn't
