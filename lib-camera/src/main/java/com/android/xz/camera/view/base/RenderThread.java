@@ -1,7 +1,6 @@
 package com.android.xz.camera.view.base;
 
 import android.content.Context;
-import android.graphics.Camera;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
@@ -15,7 +14,7 @@ import com.android.xz.gles.EglCore;
 import com.android.xz.gles.GLESUtils;
 import com.android.xz.gles.WindowSurface;
 import com.android.xz.gles.filiter.CameraFilter;
-import com.android.xz.gles.filiter.ScreenFilter;
+import com.android.xz.gles.filiter.Texture2DFilter;
 import com.android.xz.util.ImageUtils;
 import com.android.xz.util.Logs;
 
@@ -51,7 +50,7 @@ public class RenderThread extends Thread {
     private WindowSurface mWindowSurface;
     private CameraFilter mCameraFilter;
     private CameraFilter mFBOFilter;
-    private ScreenFilter mScreenFilter;
+    private Texture2DFilter mScreenFilter;
     private int mCameraPreviewWidth, mCameraPreviewHeight;
     private boolean mSizeUpdated;
 
@@ -70,7 +69,7 @@ public class RenderThread extends Thread {
         mCameraFilter = new CameraFilter();
         mFBOFilter = new CameraFilter();
         mFBOFilter.setFBO(true);
-        mScreenFilter = new ScreenFilter();
+        mScreenFilter = new Texture2DFilter();
     }
 
     @Override

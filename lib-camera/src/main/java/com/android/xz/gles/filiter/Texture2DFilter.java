@@ -11,7 +11,7 @@ import java.nio.FloatBuffer;
 /**
  * 将离屏渲染的数据绘制到屏幕中
  */
-public class ScreenFilter implements AFilter {
+public class Texture2DFilter implements AFilter {
 
     /**
      * 绘制的流程
@@ -114,7 +114,7 @@ public class ScreenFilter implements AFilter {
     private final int vertexCount = vertexCoords.length / COORDS_PER_VERTEX;
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
 
-    public ScreenFilter() {
+    public Texture2DFilter() {
         // 初始化形状坐标的顶点字节缓冲区
         mVertexBuffer = ByteBuffer.allocateDirect(vertexCoords.length * 4)
                 .order(ByteOrder.nativeOrder())
