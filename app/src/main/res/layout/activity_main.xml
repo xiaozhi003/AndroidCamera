@@ -1,95 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/surfaceCameraBtn"
-        android:textAllCaps="false"
-        android:text="Camera SurfaceView"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <Button
-        android:id="@+id/textureCameraBtn"
-        android:textAllCaps="false"
-        android:text="Camera TextureView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/surfaceCameraBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera SurfaceView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/glSurfaceCameraBtn"
-        android:textAllCaps="false"
-        android:text="Camera GLSurfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/textureCameraBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera TextureView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/glTextureCameraBtn"
-        android:textAllCaps="false"
-        android:text="Camera GLTextureView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/glSurfaceCameraBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera GLSurfaceView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/glSurfaceHolderCameraBtn"
-        android:textAllCaps="false"
-        android:text="Camera GLESSurfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/glTextureCameraBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera GLTextureView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/surfaceCamera2Btn"
-        android:textAllCaps="false"
-        android:text="Camera2 SurfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/glSurfaceHolderCameraBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera GLESSurfaceView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/textureCamera2Btn"
-        android:textAllCaps="false"
-        android:text="Camera2 TextureView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/surfaceCamera2Btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera2 SurfaceView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/glSurfaceCamera2Btn"
-        android:textAllCaps="false"
-        android:text="Camera2 GLSurfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/textureCamera2Btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera2 TextureView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/glTextureCamera2Btn"
-        android:textAllCaps="false"
-        android:text="Camera2 GLTextureView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/glSurfaceCamera2Btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera2 GLSurfaceView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/glSurfaceHolderCamera2Btn"
-        android:textAllCaps="false"
-        android:text="Camera2 GLESSurfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/glTextureCamera2Btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera2 GLTextureView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/mediaCodecBufferBtn"
-        android:textAllCaps="false"
-        android:text="MediaCodec with Buffer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/glSurfaceHolderCamera2Btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera2 GLESSurfaceView"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/mediaCodecSurfaceBtn"
-        android:textAllCaps="false"
-        android:text="MediaCodec with Surface"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/mediaCodecBufferBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MediaCodec with Buffer"
+            android:textAllCaps="false" />
 
-</LinearLayout>
+        <Button
+            android:id="@+id/mediaCodecSurfaceBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MediaCodec with Surface"
+            android:textAllCaps="false" />
+
+    </LinearLayout>
+
+</ScrollView>
