@@ -178,6 +178,12 @@ public class CameraFilter implements AFilter {
         isFBO = FBO;
     }
 
+    /**
+     * 创建帧缓冲区（FBO）
+     *
+     * @param width
+     * @param height
+     */
     public void createFrameBuffers(int width, int height) {
         if (mFrameBuffers != null) {
             destroyFrameBuffers();
@@ -209,6 +215,9 @@ public class CameraFilter implements AFilter {
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }
 
+    /**
+     * 销毁帧缓冲区（FBO）
+     */
     public void destroyFrameBuffers() {
         //删除fbo的纹理
         if (mFrameBufferTextures != null) {
