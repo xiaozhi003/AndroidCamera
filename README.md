@@ -105,7 +105,12 @@
 
 [Android Camera系列（六）：MediaCodec视频编码上-编码YUV](https://blog.csdn.net/xiaozhiwz/article/details/143114530)
 
+[Android Camera系列（七）：MediaCodec视频编码中-OpenGL ES多线程渲染](https://blog.csdn.net/xiaozhiwz/article/details/143144103)
+
+
+
 参考：
+
 1. [https://github.com/afei-cn/CameraDemo](https://github.com/afei-cn/CameraDemo)
 2. [https://github.com/saki4510t/UVCCamera](https://github.com/saki4510t/UVCCamera)
 3. [https://github.com/google/grafika](https://github.com/google/grafika)
