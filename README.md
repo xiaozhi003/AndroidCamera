@@ -91,22 +91,6 @@
 
 `ICameraManager`提供了`takePicture(PictureBufferCallback pictureCallback)`接口可以在回调中获取拍照数据，格式为**JPG**
 
-## Blog
-
-[Android Camera系列（一）：SurfaceView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141472537)
-
-[Android Camera系列（二）：TextureView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141855031)
-
-[Android Camera系列（三）：GLSurfaceView+Camera](https://blog.csdn.net/xiaozhiwz/article/details/141860162)
-
-[Android Camera系列（四）：TextureView+OpenGL ES+Camera](https://blog.csdn.net/xiaozhiwz/article/details/142781497)
-
-[Android Camera系列（五）：Camera2](https://blog.csdn.net/xiaozhiwz/article/details/142555345)
-
-[Android Camera系列（六）：MediaCodec视频编码上-编码YUV](https://blog.csdn.net/xiaozhiwz/article/details/143114530)
-
-[Android Camera系列（七）：MediaCodec视频编码中-OpenGL ES多线程渲染](https://blog.csdn.net/xiaozhiwz/article/details/143144103)
-
 
 
 参考：
