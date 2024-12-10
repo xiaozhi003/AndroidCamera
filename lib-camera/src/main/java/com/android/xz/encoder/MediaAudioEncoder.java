@@ -23,6 +23,9 @@
 
 package com.android.xz.encoder;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaCodec;
@@ -31,6 +34,8 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
 
 import com.android.xz.util.Logs;
 
@@ -52,9 +57,11 @@ public class MediaAudioEncoder extends MediaEncoder implements IAudioEncoder {
     public static final int FRAMES_PER_BUFFER = 25;  // AAC, frame/buffer/sec
 
     private AudioThread mAudioThread = null;
+    private Context mContext;
 
-    public MediaAudioEncoder(final MediaMuxerWrapper muxer, final MediaEncoderListener listener) {
+    public MediaAudioEncoder(Context context, final MediaMuxerWrapper muxer, final MediaEncoderListener listener) {
         super(muxer, listener);
+        mContext = context;
     }
 
     @Override
@@ -127,6 +134,16 @@ public class MediaAudioEncoder extends MediaEncoder implements IAudioEncoder {
             AudioRecord audioRecord = null;
             for (final int src : AUDIO_SOURCES) {
                 try {
+                    if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        break;
+                    }
                     audioRecord = new AudioRecord(src,
                             SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, buffer_size);
                     if (audioRecord != null) {

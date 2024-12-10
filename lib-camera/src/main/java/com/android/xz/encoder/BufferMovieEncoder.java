@@ -82,6 +82,19 @@ public class BufferMovieEncoder {
                     });
                 }
             });
+            // for audio capturing
+            new MediaAudioEncoder(mContext, muxerWrapper, new MediaEncoder.MediaEncoderListener() {
+                @Override
+                public void onPrepared(MediaEncoder encoder) {
+
+                }
+
+                @Override
+                public void onStopped(MediaEncoder encoder) {
+
+                }
+            });
+
             muxerWrapper.prepare();
             muxerWrapper.startRecording();
             mMuxerWrapper = muxerWrapper;

@@ -250,6 +250,19 @@ public class TextureMovieEncoder2 implements Runnable {
                     });
                 }
             });
+            // for audio capturing
+            new MediaAudioEncoder(mContext, mMuxerWrapper, new MediaEncoder.MediaEncoderListener() {
+                @Override
+                public void onPrepared(MediaEncoder encoder) {
+
+                }
+
+                @Override
+                public void onStopped(MediaEncoder encoder) {
+
+                }
+            });
+
             mMuxerWrapper.prepare();
             mMuxerWrapper.startRecording();
 
