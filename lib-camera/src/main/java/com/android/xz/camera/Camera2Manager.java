@@ -403,17 +403,15 @@ public class Camera2Manager implements ICameraManager {
     }
 
     private void initPreviewRequest() {
-        if (mPreviewSurface == null) {
-            Log.e(TAG, "initPreviewRequest failed, mPreviewSurface is null");
-            return;
-        }
         if (!isOpen()) {
             return;
         }
         try {
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             // 设置预览输出的 Surface
-            mPreviewRequestBuilder.addTarget(mPreviewSurface);
+            if (mPreviewSurface != null) {
+                mPreviewRequestBuilder.addTarget(mPreviewSurface);
+            }
             // 设置连续自动对焦
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             // 设置自动曝光
@@ -431,7 +429,7 @@ public class Camera2Manager implements ICameraManager {
             return;
         }
         previewing = true;
-        mPreviewSurface = surfaceHolder.getSurface();
+        mPreviewSurface = surfaceHolder == null ? null : surfaceHolder.getSurface();
         initPreviewRequest();
         createCommonSession();
     }
@@ -443,7 +441,7 @@ public class Camera2Manager implements ICameraManager {
         }
         previewing = true;
         surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-        mPreviewSurface = new Surface(surfaceTexture);
+        mPreviewSurface = surfaceTexture == null ? null : new Surface(surfaceTexture);
         initPreviewRequest();
         createCommonSession();
     }
