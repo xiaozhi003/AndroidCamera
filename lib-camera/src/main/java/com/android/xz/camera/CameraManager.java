@@ -77,6 +77,8 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
     private List<PreviewBufferCallback> mPreviewBufferCallbacks = new ArrayList<>();
     private PictureBufferCallback mPictureBufferCallback;
 
+    private SurfaceTexture mTempSurfaceTexture = new SurfaceTexture(10);
+
     private PreviewCallback mPreviewCallback = new PreviewCallback() {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
@@ -293,8 +295,10 @@ public class CameraManager implements Camera.AutoFocusCallback, ICameraManager {
         }
         if (mCamera != null) {
             try {
-                mCamera.setPreviewTexture(surface);
+                mCamera.setPreviewTexture(surface == null ? mTempSurfaceTexture : surface);
                 if (!mPreviewBufferCallbacks.isEmpty()) {
+                    // 申请两个缓冲区
+                    mCamera.addCallbackBuffer(new byte[mPreviewWidth * mPreviewHeight * 3 / 2]);
                     mCamera.addCallbackBuffer(new byte[mPreviewWidth * mPreviewHeight * 3 / 2]);
                     mCamera.setPreviewCallbackWithBuffer(mPreviewCallback);
                 }
