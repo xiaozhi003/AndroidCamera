@@ -440,8 +440,10 @@ public class Camera2Manager implements ICameraManager {
             return;
         }
         previewing = true;
-        surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-        mPreviewSurface = surfaceTexture == null ? null : new Surface(surfaceTexture);
+        if (surfaceTexture != null) {
+            surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            mPreviewSurface = new Surface(surfaceTexture);
+        }
         initPreviewRequest();
         createCommonSession();
     }
