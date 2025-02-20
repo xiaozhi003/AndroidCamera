@@ -376,7 +376,7 @@ public class Camera2Manager implements ICameraManager {
         // preview output
         if (!mPreviewBufferCallbacks.isEmpty()) {
             mPreviewImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(), ImageFormat.YUV_420_888, 2);
-            mPreviewImageReader.setOnImageAvailableListener(new OnImageAvailableListenerImpl(), mBackgroundHandler);
+            mPreviewImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
             outputs.add(mPreviewImageReader.getSurface());
             mPreviewRequestBuilder.addTarget(mPreviewImageReader.getSurface());
         }
@@ -796,7 +796,7 @@ public class Camera2Manager implements ICameraManager {
         }
     }
 
-    private class OnImageAvailableListenerImpl implements ImageReader.OnImageAvailableListener {
+    private ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         private byte[] y;
         private byte[] u;
         private byte[] v;
@@ -806,6 +806,7 @@ public class Camera2Manager implements ICameraManager {
         @Override
         public void onImageAvailable(ImageReader reader) {
             Image image = reader.acquireLatestImage();
+            if (image == null) return;
             // Y:U:V == 4:2:2
             if (image.getFormat() == ImageFormat.YUV_420_888) {
                 Image.Plane[] planes = image.getPlanes();
@@ -915,5 +916,5 @@ public class Camera2Manager implements ICameraManager {
 
             image.close();
         }
-    }
+    };
 }
