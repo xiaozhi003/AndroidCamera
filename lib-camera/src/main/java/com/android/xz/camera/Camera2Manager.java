@@ -805,7 +805,7 @@ public class Camera2Manager implements ICameraManager {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Image image = reader.acquireNextImage();
+            Image image = reader.acquireLatestImage();
             // Y:U:V == 4:2:2
             if (image.getFormat() == ImageFormat.YUV_420_888) {
                 Image.Plane[] planes = image.getPlanes();
