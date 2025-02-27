@@ -139,6 +139,8 @@ OpenGL ES系列
 
 [Android OpenGLES2.0开发（十）：FBO离屏渲染](https://blog.csdn.net/xiaozhiwz/article/details/144554451)
 
+[Android OpenGLES2.0开发（十一）：渲染YUV](https://blog.csdn.net/xiaozhiwz/article/details/142589796)
+
 
 
 
