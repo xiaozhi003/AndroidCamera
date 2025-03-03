@@ -175,7 +175,6 @@ public class RenderThread extends Thread {
 
     public void surfaceChanged(int width, int height) {
         mCameraFilter.surfaceChanged(width, height);
-        mFBOFilter.surfaceChanged(width, height);
         mScreenFilter.surfaceChanged(width, height);
     }
 
@@ -265,6 +264,7 @@ public class RenderThread extends Thread {
      */
     private boolean drawScreen() {
         mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+        GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
         mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
         return mWindowSurface.swapBuffers();
     }
@@ -298,6 +298,7 @@ public class RenderThread extends Thread {
         boolean swapResult;
         // 先绘制到屏幕上
         mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+        GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
         mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
 
         mVideoEncoder.frameAvailable();
@@ -332,6 +333,7 @@ public class RenderThread extends Thread {
         boolean swapResult;
         // 先绘制到屏幕上
         mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+        GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
         mCameraFilter.draw(mTextureId, mDisplayProjectionMatrix);
         swapResult = mWindowSurface.swapBuffers();
 
@@ -345,7 +347,6 @@ public class RenderThread extends Thread {
         recordWindowSurface.swapBuffers();
 
         // Restore
-        GLES20.glViewport(0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight());
         mWindowSurface.makeCurrent();
         return swapResult;
     }
@@ -361,6 +362,7 @@ public class RenderThread extends Thread {
         boolean swapResult;
         // 将数据绘制到FBO Buffer中
         mPreviewTexture.getTransformMatrix(mDisplayProjectionMatrix);
+        GLES20.glViewport(0, 0, mCameraPreviewWidth, mCameraPreviewHeight);
         int fboId = mFBOFilter.draw(mTextureId, mDisplayProjectionMatrix);
 
         // 将离屏FrameBuffer绘制到视频Surface中
@@ -385,6 +387,7 @@ public class RenderThread extends Thread {
         mCameraPreviewWidth = width;
         mCameraPreviewHeight = height;
         mSizeUpdated = true;
+        mFBOFilter.surfaceChanged(width, height);
     }
 
     /**
