@@ -38,7 +38,7 @@ public class ImageUtils {
 
     public static void init(Context context) {
         sContext = context;
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             GALLERY_PATH = Environment.DIRECTORY_DCIM + File.separator + "Camera";
         } else {
             GALLERY_PATH = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + File.separator + "Camera";
@@ -99,12 +99,8 @@ public class ImageUtils {
         FileUtils.makeDirs(outFile.getAbsolutePath());
 
         ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.TITLE, fileName);
         contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-        contentValues.put(MediaStore.MediaColumns.DATE_TAKEN, fileName);
-        //应用下的绝对路径
-        contentValues.put(MediaStore.MediaColumns.DATA, outFile.getAbsolutePath());
         //该媒体项在存储设备中的相对路径，该媒体项将在其中保留
         contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, GALLERY_PATH);
 
@@ -122,13 +118,8 @@ public class ImageUtils {
 
             outputStream.flush();
             outputStream.close();
-
-            insertToDB(outFile.getAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
-            if (uri != null) {
-                localContentResolver.delete(uri, null, null);
-            }
         } finally {
             try {
                 if (outputStream != null) {
@@ -173,12 +164,8 @@ public class ImageUtils {
         FileUtils.makeDirs(outFile.getAbsolutePath());
 
         ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.TITLE, fileName);
         contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-        contentValues.put(MediaStore.MediaColumns.DATE_TAKEN, fileName);
-        //应用下的绝对路径
-        contentValues.put(MediaStore.MediaColumns.DATA, outFile.getAbsolutePath());
         //该媒体项在存储设备中的相对路径，该媒体项将在其中保留
         contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, GALLERY_PATH);
 
@@ -196,13 +183,8 @@ public class ImageUtils {
 
             outputStream.flush();
             outputStream.close();
-
-            insertToDB(outFile.getAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
-            if (uri != null) {
-                localContentResolver.delete(uri, null, null);
-            }
         } finally {
             bitmap.recycle();
 
