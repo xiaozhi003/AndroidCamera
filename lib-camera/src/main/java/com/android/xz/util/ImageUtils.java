@@ -1,14 +1,13 @@
 package com.android.xz.util;
 
-import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -18,16 +17,15 @@ import android.util.Size;
 
 import androidx.exifinterface.media.ExifInterface;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -52,11 +50,7 @@ public class ImageUtils {
     }
 
     public static String getVideoPath() {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
-            return sContext.getExternalFilesDir("video").getAbsolutePath();
-        } else {
-            return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + File.separator + "Camera";
-        }
+        return sContext.getExternalFilesDir("video").getAbsolutePath();
     }
 
     private static final String[] STORE_IMAGES = {
@@ -84,7 +78,7 @@ public class ImageUtils {
     }
 
     public static String saveImage(byte[] jpeg) {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return saveImageToDCIM(jpeg);
         } else {
             return saveImageNone(jpeg);
@@ -438,32 +432,56 @@ public class ImageUtils {
         newExif.saveAttributes();
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
-    private Uri saveVideoToMediaStore(Context context, File videoFile) throws IOException {
+    /**
+     * 将视频保存到相册目录
+     *
+     * @param context
+     * @param videoFile
+     * @return
+     * @throws IOException
+     */
+    private Uri saveVideoToMediaStore(Context context, File videoFile) {
         // 创建一个 ContentValues 对象来存储视频文件的元数据
         ContentValues values = new ContentValues();
         values.put(MediaStore.Video.Media.DISPLAY_NAME, videoFile.getName());
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
-        values.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES);
 
-        // 获取外部存储中视频内容的 Uri
-        Uri collection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            values.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator);
+        } else {
+            // Q以下必须使用DATA指定真实路径
+            String dstPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + File.separator + "Camera" + File.separator + videoFile.getName();
+            values.put(MediaStore.Video.Media.DATA, dstPath);
+        }
 
-        // 使用 ContentResolver 插入一个新的视频条目到 MediaStore
-        Uri videoUri = context.getContentResolver().insert(collection, values);
+        ContentResolver resolver = context.getContentResolver();
+        Uri uri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
 
-        // 使用 ContentResolver 打开一个输出流来写入视频文件
-        try (OutputStream outputStream = context.getContentResolver().openOutputStream(videoUri)) {
-            Files.copy(videoFile.toPath(), outputStream);
+        try {
+            OutputStream out = resolver.openOutputStream(uri);
+            FileInputStream in = new FileInputStream(videoFile.getAbsolutePath());
+
+            byte[] buffer = new byte[4096];
+            int len;
+            while ((len = in.read(buffer)) > 0) {
+                out.write(buffer, 0, len);
+            }
+
+            in.close();
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 写失败要把脏数据清除掉
+            resolver.delete(uri, null, null);
+            return null;
         }
 
         // 通知媒体扫描器扫描新文件，使其出现在相册中
-        MediaScannerConnection.scanFile(context,
-                new String[]{videoFile.getAbsolutePath()},
-                new String[]{"video/*"},
-                null);
+        context.sendBroadcast(
+                new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri)
+        );
 
-        return videoUri;
+        return uri;
     }
 
     /**
